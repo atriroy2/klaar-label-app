@@ -1,0 +1,41 @@
+# Vercel Environment Variables
+# Copy these to Vercel Dashboard → Settings → Environment Variables
+# Replace YOUR_VERCEL_APP_URL with your actual Vercel app URL
+
+# ============================================
+# Application URLs (IMPORTANT: Replace with your actual Vercel URL!)
+# ============================================
+NEXT_PUBLIC_APP_URL=https://YOUR_VERCEL_APP_URL.vercel.app
+NEXTAUTH_URL=https://YOUR_VERCEL_APP_URL.vercel.app
+
+# ============================================
+# NextAuth Configuration
+# ============================================
+NEXTAUTH_SECRET=your_nextauth_secret_here
+
+# ============================================
+# Google OAuth
+# ============================================
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+
+# ============================================
+# Database (Same as local - shared database)
+# ============================================
+DATABASE_URL=postgresql://postgres.otytgxdfzqgavawohysu:8bQpsCJKvpx4vY06@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
+
+# ============================================
+# API Keys
+# ============================================
+# IMPORTANT: Use the key from vercel.json (D7vgROOroA0C9io+2sEAFsPypaQxTxZq/xrz+7SdloU=)
+# OR update vercel.json to use kvD/UlyyABDr51xU27YG7spkXSJ67HjCgKaFyQjZwow=
+SCHEDULER_API_KEY=D7vgROOroA0C9io+2sEAFsPypaQxTxZq/xrz+7SdloU=
+NEXT_PUBLIC_SCHEDULER_API_KEY=3QJEV/777LWZwpt8jPHTH5o8Dv7B35j81Jy8zEKeCVo=
+TEST_RESULTS_API_KEY=skYe/2EBP2pX13JpG79qKLN7EUZiF3iPYY6BXm5nghI=
+
+# ============================================
+# Optional
+# ============================================
+APP_SOURCE_NAME=leaveapp
+NODE_ENV=production
+

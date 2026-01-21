@@ -1,0 +1,23 @@
+new side menu 
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# On branch 29dec11
+# Changes to be committed:
+#	renamed:    app/dashboard/page.tsx -> app/(app)/dashboard/page.tsx
+#	new file:   app/(app)/layout.tsx
+#	new file:   app/(auth)/layout.tsx
+#	new file:   app/(auth)/login/page.tsx
+#	new file:   app/app/admin/settings/page.tsx
+#	renamed:    app/login-error/page.tsx -> app/auth/login-error/page.tsx
+#	modified:   app/components/NavBar.tsx
+#	new file:   app/components/TopNav.tsx
+#	modified:   app/layout.tsx
+#	modified:   app/login/page.tsx
+#	modified:   app/superadmin/page.tsx
+#	new file:   components/NavBar.tsx
+#	new file:   components/TopNav.tsx
+#	new file:   components/nav-bar.tsx
+#	new file:   components/top-nav.tsx
+#	modified:   lib/auth.ts
+#

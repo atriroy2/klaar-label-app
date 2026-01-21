@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/cron/process-credit-events",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/process-reset-dates",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/validate-leave-balances",
+      "schedule": "0 0 * * *"
+    }
+  ]
+} 
