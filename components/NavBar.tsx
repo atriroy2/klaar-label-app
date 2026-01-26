@@ -7,7 +7,7 @@ import { Role } from '@/lib/auth'
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from 'react'
 import Clock from './Clock'
-import SundialIcon from './SundialIcon'
+import MechanicIcon from './MechanicIcon'
 import {
     Settings,
     Shield,
@@ -131,8 +131,8 @@ export default function NavBar({ className, ...props }: NavProps) {
                             className="flex items-center gap-2 font-semibold hover:opacity-80 transition-opacity cursor-pointer"
                             style={{ pointerEvents: 'auto' }}
                         >
-                            <SundialIcon className="h-6 w-6" />
-                            <span>Sundial</span>
+                            <MechanicIcon className="h-6 w-6" />
+                            <span>Klaar Label</span>
                         </button>
                     </div>
                     

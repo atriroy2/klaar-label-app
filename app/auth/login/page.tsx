@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import SundialIcon from '@/components/SundialIcon'
+import MechanicIcon from '@/components/MechanicIcon'
 
 export default function LoginPage() {
     const searchParams = useSearchParams()
@@ -46,12 +46,12 @@ export default function LoginPage() {
                 <div className="text-center space-y-6">
                     {/* Large Logo */}
                     <div className="flex justify-center">
-                        <SundialIcon className="h-20 w-20 text-primary" />
+                        <MechanicIcon className="h-20 w-20 text-primary" />
                     </div>
                     {/* App Name */}
                     <div className="space-y-2">
                         <h1 className="text-4xl font-bold text-foreground">
-                            Sundial
+                            Klaar Label
                         </h1>
                         <h2 className="text-xl text-muted-foreground">
                         Login to your account
