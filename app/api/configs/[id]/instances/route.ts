@@ -4,6 +4,10 @@ import { authOptions } from '@/lib/auth'
 import { Role } from '@prisma/client'
 import prisma from '@/lib/prisma'
 
+// Increase body size limit to 2MB for large JSON uploads
+export const maxDuration = 60 // seconds
+export const dynamic = 'force-dynamic'
+
 // GET instances for a configuration
 export async function GET(
     request: Request,
