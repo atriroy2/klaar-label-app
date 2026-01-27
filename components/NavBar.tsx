@@ -14,6 +14,9 @@ import {
     Users,
     ChevronDown,
     Home,
+    FileText,
+    Star,
+    Zap,
 } from "lucide-react"
 import {
     Collapsible,
@@ -153,6 +156,23 @@ export default function NavBar({ className, ...props }: NavProps) {
                             <Home className="h-5 w-5" />
                             Home
                         </button>
+                        
+                        {/* Rating page - available to all users */}
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                handleNavigation('/rating')
+                            }}
+                            className={cn(
+                                "flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground text-left cursor-pointer",
+                                pathname === "/rating" && "bg-accent text-accent-foreground"
+                            )}
+                            style={{ pointerEvents: 'auto' }}
+                        >
+                            <Star className="h-5 w-5" />
+                            Rate
+                        </button>
                     </div>
 
                     {/* Admin Section */}
@@ -187,6 +207,38 @@ export default function NavBar({ className, ...props }: NavProps) {
                                     </div>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent className="space-y-1" style={{ pointerEvents: 'auto' }} onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            handleNavigation('/admin/configs')
+                                        }}
+                                        className={cn(
+                                            "flex w-full items-center gap-2 rounded-md px-9 py-2 text-sm hover:bg-accent hover:text-accent-foreground text-left cursor-pointer",
+                                            pathname.startsWith("/admin/configs") && "bg-accent/50 text-accent-foreground"
+                                        )}
+                                        style={{ pointerEvents: 'auto' }}
+                                    >
+                                        <FileText className="h-4 w-4" />
+                                        Configurations
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            handleNavigation('/admin/queue')
+                                        }}
+                                        className={cn(
+                                            "flex w-full items-center gap-2 rounded-md px-9 py-2 text-sm hover:bg-accent hover:text-accent-foreground text-left cursor-pointer",
+                                            pathname === "/admin/queue" && "bg-accent/50 text-accent-foreground"
+                                        )}
+                                        style={{ pointerEvents: 'auto' }}
+                                    >
+                                        <Zap className="h-4 w-4" />
+                                        Queue
+                                    </button>
                                     <button
                                         type="button"
                                         onClick={(e) => {

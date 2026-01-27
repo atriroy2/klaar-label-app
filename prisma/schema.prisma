@@ -44,27 +44,31 @@ model VerificationToken {
 
 // Core application models
 model Tenant {
-  id        String   @id @default(cuid())
-  name      String
-  domain    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  isActive  Boolean  @default(true)
-  users     User[]
+  id             String          @id @default(cuid())
+  name           String
+  domain         String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  isActive       Boolean         @default(true)
+  users          User[]
+  configurations Configuration[]
 }
 
 model User {
-  id            String   @id @default(cuid())
-  name          String?
-  email         String?  @unique
-  emailVerified DateTime?
-  image         String?
-  tenantId      String?
-  role          Role     @default(USER)
-  isActive      Boolean  @default(true)
-  accounts      Account[]
-  sessions      Session[]
-  tenant        Tenant?  @relation(fields: [tenantId], references: [id])
+  id                    String           @id @default(cuid())
+  name                  String?
+  email                 String?          @unique
+  emailVerified         DateTime?
+  image                 String?
+  tenantId              String?
+  role                  Role             @default(USER)
+  isActive              Boolean          @default(true)
+  accounts              Account[]
+  sessions              Session[]
+  tenant                Tenant?          @relation(fields: [tenantId], references: [id])
+  configurationsCreated Configuration[]  @relation("ConfigurationCreatedBy")
+  ratingResponses       RatingResponse[]
+  lockedMatches         RatingMatch[]    @relation("MatchLockedBy")
 
   @@index([tenantId])
 }
@@ -73,4 +77,217 @@ enum Role {
   USER
   TENANT_ADMIN
   SUPER_ADMIN
+}
+
+// Klaar Label Models
+
+enum ModelProvider {
+  OPENAI
+  GEMINI
+  ANTHROPIC
+}
+
+enum ConfigurationStatus {
+  DRAFT
+  READY
+  EXECUTING
+  COMPLETED
+}
+
+enum GenerationRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum PromptInstanceStatus {
+  PENDING
+  GENERATING
+  READY_FOR_RATING
+  RATED
+}
+
+enum RatingOutcome {
+  A_BETTER
+  B_BETTER
+  BOTH_GOOD
+  NEITHER_GOOD
+}
+
+// Main configuration for a labeling task
+model Configuration {
+  id                     String              @id @default(cuid())
+  tenantId               String
+  name                   String
+  description            String?
+  promptTemplate         String              @db.Text
+  modelProvider          ModelProvider       @default(OPENAI)
+  modelName              String              @default("gpt-4")
+  apiKey                 String?             // Encrypted API key for this config
+  generationsPerInstance Int                 @default(2)
+  rubric                 String?             @db.Text
+  status                 ConfigurationStatus @default(DRAFT)
+  tags                   String[]            @default([]) // Simple string array for tags
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  createdById            String?
+  tenant                 Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy              User?               @relation("ConfigurationCreatedBy", fields: [createdById], references: [id])
+  variables              PromptVariable[]
+  instances              PromptInstance[]
+  rejectionReasons       RejectionReason[]
+  generationRuns         GenerationRun[]
+  ratingMatches          RatingMatch[]
+
+  @@index([tenantId])
+  @@index([status])
+}
+
+// Variables that can be used in prompt templates
+model PromptVariable {
+  id              String        @id @default(cuid())
+  configurationId String
+  key             String        // Variable name used in template (e.g., "role_name")
+  label           String        // Display label (e.g., "Role Name")
+  description     String?
+  required        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  configuration   Configuration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+
+  @@unique([configurationId, key])
+  @@index([configurationId])
+}
+
+// Individual instances with variable values for generating completions
+model PromptInstance {
+  id              String               @id @default(cuid())
+  configurationId String
+  data            Json                 // Map of variable key -> value
+  status          PromptInstanceStatus @default(PENDING)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  configuration   Configuration        @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+  completions     Completion[]
+  ratingMatches   RatingMatch[]
+  finalWinner     FinalWinner?
+
+  @@index([configurationId])
+  @@index([status])
+}
+
+// Reasons for rejection that users can select
+model RejectionReason {
+  id              String        @id @default(cuid())
+  configurationId String
+  label           String
+  description     String?
+  sortOrder       Int           @default(0)
+  createdAt       DateTime      @default(now())
+  configuration   Configuration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+
+  @@index([configurationId])
+}
+
+// A generation run that processes instances
+model GenerationRun {
+  id              String              @id @default(cuid())
+  configurationId String
+  status          GenerationRunStatus @default(QUEUED)
+  provider        ModelProvider
+  modelName       String
+  totalInstances  Int                 @default(0)
+  processedCount  Int                 @default(0)
+  errorMessage    String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  configuration   Configuration       @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+  completions     Completion[]
+
+  @@index([configurationId])
+  @@index([status])
+}
+
+// Individual LLM completion output
+model Completion {
+  id               String         @id @default(cuid())
+  promptInstanceId String
+  generationRunId  String
+  output           String         @db.Text
+  provider         ModelProvider
+  modelName        String
+  index            Int            // Which generation number (0, 1, 2, etc.)
+  tokensUsed       Int?
+  createdAt        DateTime       @default(now())
+  promptInstance   PromptInstance @relation(fields: [promptInstanceId], references: [id], onDelete: Cascade)
+  generationRun    GenerationRun  @relation(fields: [generationRunId], references: [id], onDelete: Cascade)
+  matchesAsA       RatingMatch[]  @relation("MatchOptionA")
+  matchesAsB       RatingMatch[]  @relation("MatchOptionB")
+  matchesWon       RatingMatch[]  @relation("MatchWinner")
+  finalWins        FinalWinner[]
+
+  @@unique([promptInstanceId, generationRunId, index])
+  @@index([promptInstanceId])
+  @@index([generationRunId])
+}
+
+// A rating match between two completions
+model RatingMatch {
+  id                  String           @id @default(cuid())
+  promptInstanceId    String
+  configurationId     String
+  round               Int              @default(1) // For tournament brackets
+  optionACompletionId String
+  optionBCompletionId String
+  winnerCompletionId  String?
+  outcome             RatingOutcome?
+  isComplete          Boolean          @default(false)
+  // Lock fields for preventing concurrent rating
+  lockedBy            String?          // User ID who has this match locked
+  lockedAt            DateTime?        // When the lock was acquired
+  lockedByUser        User?            @relation("MatchLockedBy", fields: [lockedBy], references: [id])
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  promptInstance      PromptInstance   @relation(fields: [promptInstanceId], references: [id], onDelete: Cascade)
+  configuration       Configuration    @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+  optionA             Completion       @relation("MatchOptionA", fields: [optionACompletionId], references: [id], onDelete: Cascade)
+  optionB             Completion       @relation("MatchOptionB", fields: [optionBCompletionId], references: [id], onDelete: Cascade)
+  winner              Completion?      @relation("MatchWinner", fields: [winnerCompletionId], references: [id])
+  responses           RatingResponse[]
+
+  @@index([promptInstanceId])
+  @@index([configurationId])
+  @@index([isComplete])
+  @@index([lockedBy])
+}
+
+// Individual user's response to a rating match
+model RatingResponse {
+  id            String        @id @default(cuid())
+  ratingMatchId String
+  userId        String
+  outcome       RatingOutcome
+  reasons       String[]      // Array of rejection reason IDs selected
+  notes         String?       @db.Text
+  createdAt     DateTime      @default(now())
+  ratingMatch   RatingMatch   @relation(fields: [ratingMatchId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ratingMatchId, userId]) // One response per user per match
+  @@index([ratingMatchId])
+  @@index([userId])
+}
+
+// Final winner for instances with >2 completions (tournament result)
+model FinalWinner {
+  id                   String         @id @default(cuid())
+  promptInstanceId     String         @unique
+  winningCompletionId  String
+  determinedAt         DateTime       @default(now())
+  promptInstance       PromptInstance @relation(fields: [promptInstanceId], references: [id], onDelete: Cascade)
+  winningCompletion    Completion     @relation(fields: [winningCompletionId], references: [id], onDelete: Cascade)
+
+  @@index([winningCompletionId])
 }

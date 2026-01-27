@@ -82,8 +82,8 @@ export default function UserListPage() {
 
             if (!isTenantAdmin && !isSuperAdminWithTenant) {
                 console.log('UserListPage - Redirecting: No access')
-                router.push('/dashboard')
-            }
+            router.push('/dashboard')
+        }
         } else if (sessionStatus === 'unauthenticated') {
             router.push('/login')
         }
@@ -95,8 +95,8 @@ export default function UserListPage() {
             const isTenantAdmin = session.user.role === Role.TENANT_ADMIN
             const isSuperAdminWithTenant = session.user.role === Role.SUPER_ADMIN && session.user.tenantId
             if (isTenantAdmin || isSuperAdminWithTenant) {
-                fetchUsers()
-            }
+            fetchUsers()
+        }
         }
     }, [session, sessionStatus])
 
@@ -309,15 +309,15 @@ export default function UserListPage() {
 
     // Show loading state while session is loading
     if (sessionStatus === 'loading') {
-        return (
+    return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">Loading...</p>
-                </div>
-            </div>
-        )
-    }
+                            </div>
+        </div>
+    )
+}
 
     // Check if user has access
     const isTenantAdmin = session?.user?.role === Role.TENANT_ADMIN

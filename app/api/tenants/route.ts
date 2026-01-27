@@ -138,19 +138,19 @@ export async function POST(request: Request) {
         } else {
             // User doesn't exist - create tenant and new tenant admin user
             tenant = await prisma.tenant.create({
-                data: {
-                    name,
-                    domain,
-                    isActive: true,
-                    users: {
-                        create: {
-                            name: adminName,
-                            email: adminEmail,
-                            role: Role.TENANT_ADMIN
-                        }
+            data: {
+                name,
+                domain,
+                isActive: true,
+                users: {
+                    create: {
+                        name: adminName,
+                        email: adminEmail,
+                        role: Role.TENANT_ADMIN
                     }
                 }
-            })
+            }
+        })
         }
 
         return NextResponse.json({
