@@ -160,10 +160,10 @@ export const authOptions: NextAuthOptions = {
                 })
             }
 
-            if (dbUser) {
-                token.id = dbUser.id
-                token.role = dbUser.role as unknown as Role
-                token.tenantId = dbUser.tenantId
+                if (dbUser) {
+                    token.id = dbUser.id
+                    token.role = dbUser.role as unknown as Role
+                    token.tenantId = dbUser.tenantId
                 
                 // Debug logging in development
                 if (process.env.NODE_ENV === 'development') {
@@ -177,8 +177,8 @@ export const authOptions: NextAuthOptions = {
             } else if (user) {
                 // Only set default role on initial sign-in if user doesn't exist in DB
                 token.id = user.id
-                token.role = Role.USER
-            }
+                    token.role = Role.USER
+                }
 
             // Handle manual session updates (overrides database fetch)
             if (trigger === "update" && session) {
