@@ -27,19 +27,146 @@ const INSTANCE_BATCH_SIZE = 3
 // Can be called by a cron job or manually triggered
 
 export async function POST(request: Request) {
-    log('Worker triggered')
+    log('Worker triggered via POST')
     
-    try {
-        // Optional: Verify cron secret for security
-        const authHeader = request.headers.get('authorization')
-        const cronSecret = process.env.CRON_SECRET
-        
-        // Allow if no secret is configured (development) or if secret matches
-        if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-            log('Unauthorized - invalid cron secret')
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
+    // Optional: Verify cron secret for security
+    const authHeader = request.headers.get('authorization')
+    const cronSecret = process.env.CRON_SECRET
+    
+    // Allow if no secret is configured (development) or if secret matches
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+        log('Unauthorized - invalid cron secret')
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
+    return processQueue()
+}
+
+// Create rating matches for instances that have completions
+async function createRatingMatches(configurationId: string) {
+    try {
+        // Get all instances that are ready for rating
+        const instances = await prisma.promptInstance.findMany({
+            where: {
+                configurationId,
+                status: PromptInstanceStatus.READY_FOR_RATING
+            },
+            include: {
+                completions: {
+                    orderBy: { index: 'asc' }
+                }
+            }
+        })
+
+        for (const instance of instances) {
+            const completions = instance.completions
+            
+            if (completions.length < 2) {
+                console.log(`Instance ${instance.id} has less than 2 completions, skipping`)
+                continue
+            }
+
+            // Check if matches already exist
+            const existingMatches = await prisma.ratingMatch.count({
+                where: { promptInstanceId: instance.id }
+            })
+
+            if (existingMatches > 0) {
+                console.log(`Instance ${instance.id} already has matches, skipping`)
+                continue
+            }
+
+            // Create tournament matches based on number of completions
+            if (completions.length === 2) {
+                // Simple A vs B match
+                await prisma.ratingMatch.create({
+                    data: {
+                        promptInstanceId: instance.id,
+                        configurationId,
+                        round: 1,
+                        optionACompletionId: completions[0].id,
+                        optionBCompletionId: completions[1].id
+                    }
+                })
+            } else if (completions.length === 3) {
+                // A vs B, then winner vs C
+                await prisma.ratingMatch.create({
+                    data: {
+                        promptInstanceId: instance.id,
+                        configurationId,
+                        round: 1,
+                        optionACompletionId: completions[0].id,
+                        optionBCompletionId: completions[1].id
+                    }
+                })
+                // Note: Round 2 match will be created after round 1 is complete
+            } else if (completions.length >= 4) {
+                // Tournament: A vs B, C vs D, then winners
+                await prisma.ratingMatch.create({
+                    data: {
+                        promptInstanceId: instance.id,
+                        configurationId,
+                        round: 1,
+                        optionACompletionId: completions[0].id,
+                        optionBCompletionId: completions[1].id
+                    }
+                })
+                await prisma.ratingMatch.create({
+                    data: {
+                        promptInstanceId: instance.id,
+                        configurationId,
+                        round: 1,
+                        optionACompletionId: completions[2].id,
+                        optionBCompletionId: completions[3].id
+                    }
+                })
+                // Final match will be created after round 1 is complete
+            }
+        }
+    } catch (error) {
+        console.error('Error creating rating matches:', error)
+    }
+}
+
+// GET endpoint - Vercel cron calls GET, so this also triggers processing
+export async function GET(request: Request) {
+    log('Worker triggered via GET (cron)')
+    
+    // Check if there's work to do
+    const hasWork = await prisma.generationRun.findFirst({
+        where: { 
+            status: { in: [GenerationRunStatus.QUEUED, GenerationRunStatus.RUNNING] }
+        }
+    })
+
+    if (!hasWork) {
+        // No work - just return status
+        const queuedRuns = await prisma.generationRun.count({
+            where: { status: GenerationRunStatus.QUEUED }
+        })
+        const runningRuns = await prisma.generationRun.count({
+            where: { status: GenerationRunStatus.RUNNING }
+        })
+        const pendingInstances = await prisma.promptInstance.count({
+            where: { status: PromptInstanceStatus.PENDING }
+        })
+
+        return NextResponse.json({
+            queuedRuns,
+            runningRuns,
+            pendingInstances,
+            message: 'No work to process'
+        })
+    }
+
+    // There's work - trigger processing by calling POST handler logic
+    log('Work found, triggering processing...')
+    return processQueue()
+}
+
+// Shared processing logic used by both GET and POST
+async function processQueue() {
+    try {
         // Find a queued or running generation run
         let run = await prisma.generationRun.findFirst({
             where: { status: GenerationRunStatus.RUNNING },
@@ -324,117 +451,5 @@ export async function POST(request: Request) {
             error: 'Worker error',
             details: error instanceof Error ? error.message : 'Unknown error'
         }, { status: 500 })
-    }
-}
-
-// Create rating matches for instances that have completions
-async function createRatingMatches(configurationId: string) {
-    try {
-        // Get all instances that are ready for rating
-        const instances = await prisma.promptInstance.findMany({
-            where: {
-                configurationId,
-                status: PromptInstanceStatus.READY_FOR_RATING
-            },
-            include: {
-                completions: {
-                    orderBy: { index: 'asc' }
-                }
-            }
-        })
-
-        for (const instance of instances) {
-            const completions = instance.completions
-            
-            if (completions.length < 2) {
-                console.log(`Instance ${instance.id} has less than 2 completions, skipping`)
-                continue
-            }
-
-            // Check if matches already exist
-            const existingMatches = await prisma.ratingMatch.count({
-                where: { promptInstanceId: instance.id }
-            })
-
-            if (existingMatches > 0) {
-                console.log(`Instance ${instance.id} already has matches, skipping`)
-                continue
-            }
-
-            // Create tournament matches based on number of completions
-            if (completions.length === 2) {
-                // Simple A vs B match
-                await prisma.ratingMatch.create({
-                    data: {
-                        promptInstanceId: instance.id,
-                        configurationId,
-                        round: 1,
-                        optionACompletionId: completions[0].id,
-                        optionBCompletionId: completions[1].id
-                    }
-                })
-            } else if (completions.length === 3) {
-                // A vs B, then winner vs C
-                await prisma.ratingMatch.create({
-                    data: {
-                        promptInstanceId: instance.id,
-                        configurationId,
-                        round: 1,
-                        optionACompletionId: completions[0].id,
-                        optionBCompletionId: completions[1].id
-                    }
-                })
-                // Note: Round 2 match will be created after round 1 is complete
-            } else if (completions.length >= 4) {
-                // Tournament: A vs B, C vs D, then winners
-                await prisma.ratingMatch.create({
-                    data: {
-                        promptInstanceId: instance.id,
-                        configurationId,
-                        round: 1,
-                        optionACompletionId: completions[0].id,
-                        optionBCompletionId: completions[1].id
-                    }
-                })
-                await prisma.ratingMatch.create({
-                    data: {
-                        promptInstanceId: instance.id,
-                        configurationId,
-                        round: 1,
-                        optionACompletionId: completions[2].id,
-                        optionBCompletionId: completions[3].id
-                    }
-                })
-                // Final match will be created after round 1 is complete
-            }
-        }
-    } catch (error) {
-        console.error('Error creating rating matches:', error)
-    }
-}
-
-// GET endpoint to check worker status
-export async function GET() {
-    try {
-        const queuedRuns = await prisma.generationRun.count({
-            where: { status: GenerationRunStatus.QUEUED }
-        })
-
-        const runningRuns = await prisma.generationRun.count({
-            where: { status: GenerationRunStatus.RUNNING }
-        })
-
-        const pendingInstances = await prisma.promptInstance.count({
-            where: { status: PromptInstanceStatus.PENDING }
-        })
-
-        return NextResponse.json({
-            queuedRuns,
-            runningRuns,
-            pendingInstances
-        })
-    } catch (error) {
-        console.error('Error getting worker status:', error)
-        return NextResponse.json({ error: 'Error getting status' }, { status: 500 })
     }
 }
