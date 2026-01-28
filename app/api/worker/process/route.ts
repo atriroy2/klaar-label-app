@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { GenerationRunStatus, PromptInstanceStatus, ConfigurationStatus, ModelProvider } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { getProvider, interpolatePrompt } from '@/lib/llm'
+import { getProvider, interpolatePrompt, getVariationOptions } from '@/lib/llm'
 
 // Helper for timestamped logging
 function log(message: string, data?: unknown) {
@@ -124,36 +124,71 @@ export async function POST(request: Request) {
             log(`Processing instance ${instance.id}`, { data: Object.keys(instanceData) })
             
             try {
+                // Check for existing completions (handles partial completion scenarios)
+                const existingCompletions = await prisma.completion.findMany({
+                    where: { promptInstanceId: instance.id },
+                    select: { index: true }
+                })
+                const existingIndices = new Set(existingCompletions.map(c => c.index))
+                
+                // Determine which indices still need to be generated
+                const missingIndices: number[] = []
+                for (let i = 0; i < config.generationsPerInstance; i++) {
+                    if (!existingIndices.has(i)) {
+                        missingIndices.push(i)
+                    }
+                }
+
+                log(`Instance ${instance.id}: ${existingCompletions.length} existing completions, ${missingIndices.length} missing`)
+
+                // If all completions exist, mark as ready and skip
+                if (missingIndices.length === 0) {
+                    log(`Instance ${instance.id} already has all ${config.generationsPerInstance} completions, marking as ready`)
+                    await prisma.promptInstance.update({
+                        where: { id: instance.id },
+                        data: { status: PromptInstanceStatus.READY_FOR_RATING }
+                    })
+                    processedCount++
+                    await prisma.generationRun.update({
+                        where: { id: run.id },
+                        data: { processedCount }
+                    })
+                    continue
+                }
+
                 // Mark instance as generating
                 await prisma.promptInstance.update({
                     where: { id: instance.id },
                     data: { status: PromptInstanceStatus.GENERATING }
                 })
 
-                // Generate completions - PARALLEL execution for speed
+                // Generate completions - PARALLEL execution for speed (only missing ones)
                 const prompt = interpolatePrompt(config.promptTemplate, instanceData)
                 log(`Prompt length: ${prompt.length} chars`)
-                log(`Starting ${config.generationsPerInstance} parallel generations for instance ${instance.id}`)
+                log(`Starting ${missingIndices.length} parallel generations for instance ${instance.id} (indices: ${missingIndices.join(', ')})`)
 
-                // Create parallel generation tasks
+                // Create parallel generation tasks for missing indices only
                 const generateOne = async (index: number) => {
-                    log(`[Parallel] Starting generation ${index + 1}/${config.generationsPerInstance} for instance ${instance.id}`)
+                    // Get variation options for this index to introduce diversity
+                    const variationOptions = getVariationOptions(index)
+                    log(`[Parallel] Starting generation ${index + 1}/${config.generationsPerInstance} for instance ${instance.id}`, {
+                        temperature: variationOptions.temperature,
+                        topP: variationOptions.topP
+                    })
                     const result = await provider.generateCompletion(
                         prompt,
                         config.modelName,
-                        config.apiKey || undefined
+                        config.apiKey || undefined,
+                        variationOptions
                     )
                     return { index, result }
                 }
 
-                // Execute all generations in parallel
-                const generationPromises = Array.from(
-                    { length: config.generationsPerInstance },
-                    (_, i) => generateOne(i)
-                )
+                // Execute generations in parallel for missing indices
+                const generationPromises = missingIndices.map(i => generateOne(i))
 
                 const results = await Promise.allSettled(generationPromises)
-                log(`[Parallel] All ${config.generationsPerInstance} generations completed for instance ${instance.id}`)
+                log(`[Parallel] All ${missingIndices.length} generations completed for instance ${instance.id}`)
 
                 // Process results and save completions
                 let successCount = 0
@@ -194,13 +229,23 @@ export async function POST(request: Request) {
                     }
                 }
                 
-                log(`Instance ${instance.id}: ${successCount}/${config.generationsPerInstance} generations successful`)
+                const totalCompletions = existingCompletions.length + successCount
+                log(`Instance ${instance.id}: ${successCount}/${missingIndices.length} new generations successful, total: ${totalCompletions}/${config.generationsPerInstance}`)
 
-                // Mark instance as ready for rating
-                await prisma.promptInstance.update({
-                    where: { id: instance.id },
-                    data: { status: PromptInstanceStatus.READY_FOR_RATING }
-                })
+                // Only mark as ready if we have enough completions (at least 2 for rating)
+                if (totalCompletions >= Math.min(2, config.generationsPerInstance)) {
+                    await prisma.promptInstance.update({
+                        where: { id: instance.id },
+                        data: { status: PromptInstanceStatus.READY_FOR_RATING }
+                    })
+                } else {
+                    // Not enough completions, keep as pending for retry
+                    log(`Instance ${instance.id} only has ${totalCompletions} completions, keeping as PENDING for retry`)
+                    await prisma.promptInstance.update({
+                        where: { id: instance.id },
+                        data: { status: PromptInstanceStatus.PENDING }
+                    })
+                }
 
                 processedCount++
                 log(`Instance ${instance.id} completed. Total processed: ${processedCount}`)

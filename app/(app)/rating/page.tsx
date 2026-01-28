@@ -15,6 +15,21 @@ import { Loader2, FileText, CheckCircle, XCircle, Equal, ThumbsDown, ArrowRight 
 import { Separator } from "@/components/ui/separator"
 import MarkdownPreview from "@/components/MarkdownPreview"
 
+// Helper to clean up LLM output - strips markdown code fences if present
+function cleanLLMOutput(output: string): string {
+    if (!output) return ''
+    
+    let cleaned = output.trim()
+    
+    // Remove opening code fence with optional language (```json, ```javascript, ``` etc.)
+    cleaned = cleaned.replace(/^```[\w]*\n?/i, '')
+    
+    // Remove closing code fence
+    cleaned = cleaned.replace(/\n?```$/i, '')
+    
+    return cleaned.trim()
+}
+
 type RejectionReason = {
     id: string
     label: string
@@ -409,9 +424,9 @@ export default function RatingPage() {
                             <Badge variant="outline">Response {match.optionA.index + 1}</Badge>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="prose prose-sm max-w-none dark:prose-invert max-h-[400px] overflow-y-auto bg-muted/30 p-4 rounded-md">
-                            <MarkdownPreview content={match.optionA.output} />
+                    <CardContent className="overflow-hidden">
+                        <div className="prose prose-sm max-w-none dark:prose-invert max-h-[400px] overflow-y-auto overflow-x-hidden bg-muted/30 p-4 rounded-md break-words [&_*]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-all">
+                            <MarkdownPreview content={cleanLLMOutput(match.optionA.output)} />
                         </div>
                     </CardContent>
                 </Card>
@@ -424,9 +439,9 @@ export default function RatingPage() {
                             <Badge variant="outline">Response {match.optionB.index + 1}</Badge>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="prose prose-sm max-w-none dark:prose-invert max-h-[400px] overflow-y-auto bg-muted/30 p-4 rounded-md">
-                            <MarkdownPreview content={match.optionB.output} />
+                    <CardContent className="overflow-hidden">
+                        <div className="prose prose-sm max-w-none dark:prose-invert max-h-[400px] overflow-y-auto overflow-x-hidden bg-muted/30 p-4 rounded-md break-words [&_*]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-all">
+                            <MarkdownPreview content={cleanLLMOutput(match.optionB.output)} />
                         </div>
                     </CardContent>
                 </Card>

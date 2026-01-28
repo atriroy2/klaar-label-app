@@ -1,14 +1,18 @@
-import { LLMProvider, LLMResponse } from './types'
+import { LLMProvider, LLMResponse, GenerationOptions } from './types'
 
 export class GeminiProvider implements LLMProvider {
     name = 'gemini'
 
-    async generateCompletion(prompt: string, model: string, apiKey?: string): Promise<LLMResponse> {
+    async generateCompletion(prompt: string, model: string, apiKey?: string, options?: GenerationOptions): Promise<LLMResponse> {
         const key = apiKey || process.env.GEMINI_API_KEY
         
         if (!key) {
             return { output: '', error: 'Gemini API key not configured' }
         }
+
+        // Use provided options or defaults
+        const temperature = options?.temperature ?? 1.0
+        const topP = options?.topP ?? 1.0
 
         try {
             const modelName = model || 'gemini-pro'
@@ -28,7 +32,8 @@ export class GeminiProvider implements LLMProvider {
                         }
                     ],
                     generationConfig: {
-                        temperature: 0.7,
+                        temperature,
+                        topP,
                         maxOutputTokens: 4096
                     }
                 })
