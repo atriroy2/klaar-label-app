@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, FileText, CheckCircle, XCircle, Equal, ThumbsDown, ArrowRight } from "lucide-react"
+import { Loader2, FileText, CheckCircle, XCircle, Equal, ThumbsDown, ArrowRight, Link2, Link2Off } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import MarkdownPreview from "@/components/MarkdownPreview"
 
@@ -106,6 +106,34 @@ export default function RatingPage() {
     const [ratingsCompleted, setRatingsCompleted] = useState(0)
     const [lockExpiresAt, setLockExpiresAt] = useState<Date | null>(null)
     const [timeRemaining, setTimeRemaining] = useState<number>(0)
+    const [syncScroll, setSyncScroll] = useState(true)
+    
+    // Refs for synchronized scrolling
+    const optionARef = useRef<HTMLDivElement>(null)
+    const optionBRef = useRef<HTMLDivElement>(null)
+    const isScrolling = useRef(false)
+
+    // Handle synchronized scrolling
+    const handleScroll = useCallback((source: 'A' | 'B') => {
+        if (!syncScroll || isScrolling.current) return
+        
+        isScrolling.current = true
+        
+        const sourceRef = source === 'A' ? optionARef.current : optionBRef.current
+        const targetRef = source === 'A' ? optionBRef.current : optionARef.current
+        
+        if (sourceRef && targetRef) {
+            // Calculate scroll percentage
+            const scrollPercentage = sourceRef.scrollTop / (sourceRef.scrollHeight - sourceRef.clientHeight)
+            // Apply to target
+            targetRef.scrollTop = scrollPercentage * (targetRef.scrollHeight - targetRef.clientHeight)
+        }
+        
+        // Reset flag after a small delay to prevent infinite loops
+        setTimeout(() => {
+            isScrolling.current = false
+        }, 10)
+    }, [syncScroll])
 
     // Check authentication
     useEffect(() => {
@@ -434,36 +462,68 @@ export default function RatingPage() {
             )}
 
             {/* Comparison */}
-            <div className="grid md:grid-cols-2 gap-4">
-                {/* Option A */}
-                <Card className={`transition-all ${selectedOutcome === 'A_BETTER' ? 'ring-2 ring-primary' : ''}`}>
-                    <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">Option A</CardTitle>
-                            <Badge variant="outline">Response {match.optionA.index + 1}</Badge>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="overflow-hidden">
-                        <div className="prose prose-sm max-w-none dark:prose-invert max-h-[400px] overflow-y-auto overflow-x-hidden bg-muted/30 p-4 rounded-md break-words [&_*]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-all">
-                            <MarkdownPreview content={cleanLLMOutput(match.optionA.output)} />
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className="space-y-2">
+                {/* Sync scroll toggle */}
+                <div className="flex justify-end">
+                    <Button
+                        variant={syncScroll ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSyncScroll(!syncScroll)}
+                        className="gap-2"
+                    >
+                        {syncScroll ? (
+                            <>
+                                <Link2 className="h-4 w-4" />
+                                Sync Scroll On
+                            </>
+                        ) : (
+                            <>
+                                <Link2Off className="h-4 w-4" />
+                                Sync Scroll Off
+                            </>
+                        )}
+                    </Button>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                    {/* Option A */}
+                    <Card className={`transition-all ${selectedOutcome === 'A_BETTER' ? 'ring-2 ring-primary' : ''}`}>
+                        <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-base">Option A</CardTitle>
+                                <Badge variant="outline">Response {match.optionA.index + 1}</Badge>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="overflow-hidden">
+                            <div 
+                                ref={optionARef}
+                                onScroll={() => handleScroll('A')}
+                                className="prose prose-sm max-w-none dark:prose-invert max-h-[400px] overflow-y-auto overflow-x-hidden bg-muted/30 p-4 rounded-md break-words [&_*]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-all"
+                            >
+                                <MarkdownPreview content={cleanLLMOutput(match.optionA.output)} />
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                {/* Option B */}
-                <Card className={`transition-all ${selectedOutcome === 'B_BETTER' ? 'ring-2 ring-primary' : ''}`}>
-                    <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">Option B</CardTitle>
-                            <Badge variant="outline">Response {match.optionB.index + 1}</Badge>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="overflow-hidden">
-                        <div className="prose prose-sm max-w-none dark:prose-invert max-h-[400px] overflow-y-auto overflow-x-hidden bg-muted/30 p-4 rounded-md break-words [&_*]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-all">
-                            <MarkdownPreview content={cleanLLMOutput(match.optionB.output)} />
-                        </div>
-                    </CardContent>
-                </Card>
+                    {/* Option B */}
+                    <Card className={`transition-all ${selectedOutcome === 'B_BETTER' ? 'ring-2 ring-primary' : ''}`}>
+                        <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-base">Option B</CardTitle>
+                                <Badge variant="outline">Response {match.optionB.index + 1}</Badge>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="overflow-hidden">
+                            <div 
+                                ref={optionBRef}
+                                onScroll={() => handleScroll('B')}
+                                className="prose prose-sm max-w-none dark:prose-invert max-h-[400px] overflow-y-auto overflow-x-hidden bg-muted/30 p-4 rounded-md break-words [&_*]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-all"
+                            >
+                                <MarkdownPreview content={cleanLLMOutput(match.optionB.output)} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
 
             {/* Rating Options */}
