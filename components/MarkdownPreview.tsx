@@ -11,6 +11,11 @@ const MDPreview = dynamic(
 
 // Custom styles to ensure proper markdown rendering
 const customStyles = `
+    .wmde-markdown {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
+    }
     .wmde-markdown ul,
     .wmde-markdown ol {
         list-style-position: outside !important;
@@ -60,6 +65,13 @@ const customStyles = `
         padding: 0.2em 0.4em !important;
         border-radius: 3px !important;
         font-family: monospace !important;
+        word-break: break-all !important;
+        white-space: pre-wrap !important;
+    }
+    .wmde-markdown pre {
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        overflow-x: hidden !important;
     }
     .wmde-markdown blockquote {
         border-left: 4px solid #ddd !important;
@@ -69,6 +81,8 @@ const customStyles = `
     }
     .wmde-markdown p {
         margin: 0.5em 0 !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
     }
 `
 

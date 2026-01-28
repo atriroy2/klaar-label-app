@@ -478,6 +478,50 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
         }
     }
 
+    // Force complete configuration - create rating matches for ready instances
+    const handleForceComplete = async () => {
+        const message = 'Force Complete: This will mark stuck instances as ready (if they have 2+ completions), complete the configuration, and create rating matches. Continue?'
+        
+        if (!confirm(message)) return
+
+        try {
+            const response = await fetch(`/api/configs/${params.id}/force-complete`, {
+                method: 'POST'
+            })
+
+            const result = await response.json()
+
+            if (response.ok) {
+                toast({
+                    title: "Success",
+                    description: `Configuration completed! ${result.instancesMarkedReady} instances ready, ${result.ratingMatchesCreated} rating matches created.`
+                })
+                if (result.instancesSkipped > 0) {
+                    toast({
+                        title: "Note",
+                        description: `${result.instancesSkipped} instance(s) skipped (not enough completions)`,
+                        variant: "default"
+                    })
+                }
+                fetchConfig()
+                fetchInstances()
+            } else {
+                toast({
+                    title: "Error",
+                    description: result.error || "Failed to force complete",
+                    variant: "destructive"
+                })
+            }
+        } catch (error) {
+            console.error('Error force completing:', error)
+            toast({
+                title: "Error",
+                description: "Failed to force complete configuration",
+                variant: "destructive"
+            })
+        }
+    }
+
     // Fetch completions for selected instance
     const fetchCompletions = async (instanceId: string) => {
         setLoadingCompletions(true)
@@ -504,6 +548,42 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
     const handleViewInstance = (instance: Instance) => {
         setSelectedInstance(instance)
         fetchCompletions(instance.id)
+    }
+
+    // Handle deleting a single instance
+    const handleDeleteInstance = async (instanceId: string) => {
+        if (!confirm('Are you sure you want to delete this instance? This will also delete its completions and ratings.')) {
+            return
+        }
+
+        try {
+            const response = await fetch(`/api/instances/${instanceId}`, {
+                method: 'DELETE'
+            })
+
+            if (response.ok) {
+                toast({
+                    title: "Success",
+                    description: "Instance deleted successfully"
+                })
+                fetchInstances()
+                fetchConfig()
+            } else {
+                const error = await response.json()
+                toast({
+                    title: "Error",
+                    description: error.error || "Failed to delete instance",
+                    variant: "destructive"
+                })
+            }
+        } catch (error) {
+            console.error('Error deleting instance:', error)
+            toast({
+                title: "Error",
+                description: "Failed to delete instance",
+                variant: "destructive"
+            })
+        }
     }
 
     // Fetch ratings for the configuration
@@ -694,6 +774,14 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={handleForceComplete}>
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Force Complete
+                                <span className="ml-2 text-xs text-muted-foreground">
+                                    (create ratings now)
+                                </span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleResetConfig('soft')}>
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Soft Reset
@@ -1184,15 +1272,25 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
                                                 </TableCell>
                                                 <TableCell>{instance._count?.completions || 0}</TableCell>
                                                 <TableCell>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => handleViewInstance(instance)}
-                                                        disabled={!instance._count?.completions}
-                                                    >
-                                                        <Eye className="h-4 w-4 mr-1" />
-                                                        View
-                                                    </Button>
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleViewInstance(instance)}
+                                                            disabled={!instance._count?.completions}
+                                                        >
+                                                            <Eye className="h-4 w-4 mr-1" />
+                                                            View
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleDeleteInstance(instance.id)}
+                                                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
                                         ))}

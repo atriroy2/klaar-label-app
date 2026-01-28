@@ -1,14 +1,18 @@
-import { LLMProvider, LLMResponse } from './types'
+import { LLMProvider, LLMResponse, GenerationOptions } from './types'
 
 export class OpenAIProvider implements LLMProvider {
     name = 'openai'
 
-    async generateCompletion(prompt: string, model: string, apiKey?: string): Promise<LLMResponse> {
+    async generateCompletion(prompt: string, model: string, apiKey?: string, options?: GenerationOptions): Promise<LLMResponse> {
         const key = apiKey || process.env.OPENAI_API_KEY
         
         if (!key) {
             return { output: '', error: 'OpenAI API key not configured' }
         }
+
+        // Use provided options or defaults
+        const temperature = options?.temperature ?? 1.0
+        const topP = options?.topP ?? 1.0
 
         try {
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -22,7 +26,8 @@ export class OpenAIProvider implements LLMProvider {
                     messages: [
                         { role: 'user', content: prompt }
                     ],
-                    temperature: 0.7,
+                    temperature,
+                    top_p: topP,
                     max_tokens: 4096
                 })
             })
