@@ -18,9 +18,10 @@ function logError(message: string, error?: unknown) {
     console.error(`[WORKER ERROR ${timestamp}] ${message}`, error)
 }
 
-// Parallelization settings
-const INSTANCE_BATCH_SIZE = 3 // Process 3 instances in parallel
-// With 4 generations per instance, this means max 12 concurrent API calls
+// Batch size for Vercel timeout constraints
+// Each instance takes ~30s (4 parallel LLM calls), so 3 instances = ~90s
+// This leaves plenty of margin under Vercel's 300s timeout
+const INSTANCE_BATCH_SIZE = 3
 
 // This endpoint processes queued generation runs
 // Can be called by a cron job or manually triggered
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
                 configurationId: run.configurationId,
                 status: { in: [PromptInstanceStatus.PENDING, PromptInstanceStatus.GENERATING] }
             },
-            take: 10 // Process smaller batches for better progress visibility
+            take: INSTANCE_BATCH_SIZE // Stay under Vercel's 300s timeout
         })
 
         log(`Found ${instances.length} instances to process`)
