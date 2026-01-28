@@ -15,19 +15,38 @@ import { Loader2, FileText, CheckCircle, XCircle, Equal, ThumbsDown, ArrowRight 
 import { Separator } from "@/components/ui/separator"
 import MarkdownPreview from "@/components/MarkdownPreview"
 
-// Helper to clean up LLM output - strips markdown code fences if present
+// Helper to clean up and format LLM output
 function cleanLLMOutput(output: string): string {
     if (!output) return ''
     
     let cleaned = output.trim()
     
     // Remove opening code fence with optional language (```json, ```javascript, ``` etc.)
+    const hadCodeFence = /^```[\w]*\n?/i.test(cleaned)
     cleaned = cleaned.replace(/^```[\w]*\n?/i, '')
     
     // Remove closing code fence
     cleaned = cleaned.replace(/\n?```$/i, '')
+    cleaned = cleaned.trim()
     
-    return cleaned.trim()
+    // Check if content looks like JSON (array or object)
+    const looksLikeJSON = (cleaned.startsWith('[') && cleaned.endsWith(']')) ||
+                          (cleaned.startsWith('{') && cleaned.endsWith('}'))
+    
+    if (looksLikeJSON) {
+        try {
+            // Try to parse and pretty-print the JSON
+            const parsed = JSON.parse(cleaned)
+            const formatted = JSON.stringify(parsed, null, 2)
+            // Return as a proper code block for syntax highlighting
+            return '```json\n' + formatted + '\n```'
+        } catch {
+            // If parsing fails, just wrap in code block as-is
+            return '```json\n' + cleaned + '\n```'
+        }
+    }
+    
+    return cleaned
 }
 
 type RejectionReason = {
