@@ -18,6 +18,10 @@ function logError(message: string, error?: unknown) {
     console.error(`[WORKER ERROR ${timestamp}] ${message}`, error)
 }
 
+// Parallelization settings
+const INSTANCE_BATCH_SIZE = 3 // Process 3 instances in parallel
+// With 4 generations per instance, this means max 12 concurrent API calls
+
 // This endpoint processes queued generation runs
 // Can be called by a cron job or manually triggered
 
@@ -126,44 +130,71 @@ export async function POST(request: Request) {
                     data: { status: PromptInstanceStatus.GENERATING }
                 })
 
-                // Generate completions
+                // Generate completions - PARALLEL execution for speed
                 const prompt = interpolatePrompt(config.promptTemplate, instanceData)
                 log(`Prompt length: ${prompt.length} chars`)
+                log(`Starting ${config.generationsPerInstance} parallel generations for instance ${instance.id}`)
 
-                for (let i = 0; i < config.generationsPerInstance; i++) {
-                    log(`Generating completion ${i + 1}/${config.generationsPerInstance} for instance ${instance.id}`)
-                    
+                // Create parallel generation tasks
+                const generateOne = async (index: number) => {
+                    log(`[Parallel] Starting generation ${index + 1}/${config.generationsPerInstance} for instance ${instance.id}`)
                     const result = await provider.generateCompletion(
                         prompt,
                         config.modelName,
                         config.apiKey || undefined
                     )
-
-                    if (result.error) {
-                        logError(`Generation error for instance ${instance.id}, attempt ${i + 1}:`, result.error)
-                        errors.push(`Instance ${instance.id}, gen ${i + 1}: ${result.error}`)
-                        errorCount++
-                        continue
-                    }
-
-                    log(`Completion ${i + 1} generated successfully`, { 
-                        outputLength: result.output.length,
-                        tokensUsed: result.tokensUsed 
-                    })
-
-                    // Save completion
-                    await prisma.completion.create({
-                        data: {
-                            promptInstanceId: instance.id,
-                            generationRunId: run.id,
-                            output: result.output,
-                            provider: run.provider,
-                            modelName: run.modelName,
-                            index: i,
-                            tokensUsed: result.tokensUsed
-                        }
-                    })
+                    return { index, result }
                 }
+
+                // Execute all generations in parallel
+                const generationPromises = Array.from(
+                    { length: config.generationsPerInstance },
+                    (_, i) => generateOne(i)
+                )
+
+                const results = await Promise.allSettled(generationPromises)
+                log(`[Parallel] All ${config.generationsPerInstance} generations completed for instance ${instance.id}`)
+
+                // Process results and save completions
+                let successCount = 0
+                for (const outcome of results) {
+                    if (outcome.status === 'fulfilled') {
+                        const { index, result } = outcome.value
+                        
+                        if (result.error) {
+                            logError(`Generation error for instance ${instance.id}, gen ${index + 1}:`, result.error)
+                            errors.push(`Instance ${instance.id}, gen ${index + 1}: ${result.error}`)
+                            errorCount++
+                            continue
+                        }
+
+                        log(`Completion ${index + 1} generated successfully`, { 
+                            outputLength: result.output.length,
+                            tokensUsed: result.tokensUsed 
+                        })
+
+                        // Save completion
+                        await prisma.completion.create({
+                            data: {
+                                promptInstanceId: instance.id,
+                                generationRunId: run.id,
+                                output: result.output,
+                                provider: run.provider,
+                                modelName: run.modelName,
+                                index: index,
+                                tokensUsed: result.tokensUsed
+                            }
+                        })
+                        successCount++
+                    } else {
+                        // Promise rejected
+                        logError(`Generation promise rejected for instance ${instance.id}:`, outcome.reason)
+                        errors.push(`Instance ${instance.id}: ${outcome.reason}`)
+                        errorCount++
+                    }
+                }
+                
+                log(`Instance ${instance.id}: ${successCount}/${config.generationsPerInstance} generations successful`)
 
                 // Mark instance as ready for rating
                 await prisma.promptInstance.update({
