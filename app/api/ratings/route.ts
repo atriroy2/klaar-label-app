@@ -372,9 +372,17 @@ export async function POST(request: Request) {
         // Check if we need to create next round matches or determine final winner
         await handleMatchCompletion(match, winnerCompletionId)
 
+        // Award points (SharthokBucks) for completing a rating match
+        const SARTOK_BUCKS_PER_MATCH = 100
+        await prisma.user.update({
+            where: { id: userId },
+            data: { sartokBucks: { increment: SARTOK_BUCKS_PER_MATCH } }
+        })
+
         return NextResponse.json({ 
             success: true, 
             response,
+            sartokBucksEarned: SARTOK_BUCKS_PER_MATCH,
             message: 'Rating submitted successfully'
         })
     } catch (error) {

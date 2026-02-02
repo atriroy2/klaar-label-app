@@ -63,6 +63,7 @@ model User {
   tenantId              String?
   role                  Role             @default(USER)
   isActive              Boolean          @default(true)
+  sartokBucks           Int              @default(0)
   accounts              Account[]
   sessions              Session[]
   tenant                Tenant?          @relation(fields: [tenantId], references: [id])

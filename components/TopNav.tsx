@@ -2,10 +2,12 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import { Button } from "@/components/ui/button"
-import { UserCircle, LogOut, Sun, Moon, Mail, User, Building2, Users } from "lucide-react"
+import { UserCircle, LogOut, Sun, Moon, Mail, User, Building2, Users, Coins, Trophy } from "lucide-react"
 import { useTheme } from "next-themes"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 function TopNavSkeleton() {
     return (
@@ -30,6 +32,7 @@ interface UserDetails {
     email: string | null
     department: string | null
     team: string | null
+    sartokBucks: number
     manager: {
         name: string | null
         email: string | null
@@ -42,31 +45,30 @@ export default function TopNav() {
     const [userDetails, setUserDetails] = useState<UserDetails | null>(null)
     const [loadingDetails, setLoadingDetails] = useState(false)
 
-    // Fetch full user details
-    useEffect(() => {
-        const fetchUserDetails = async () => {
-            if (!session?.user?.id) return
-
-            try {
-                setLoadingDetails(true)
-                const response = await fetch(`/api/users/${session.user.id}`)
-                if (response.ok) {
-                    const data = await response.json()
-                    setUserDetails({
-                        name: data.name,
-                        email: data.email,
-                        department: data.department,
-                        team: data.team,
-                        manager: data.manager,
-                    })
-                }
-            } catch (error) {
-                console.error('Error fetching user details:', error)
-            } finally {
-                setLoadingDetails(false)
+    const fetchUserDetails = async () => {
+        if (!session?.user?.id) return
+        try {
+            setLoadingDetails(true)
+            const response = await fetch(`/api/users/${session.user.id}`)
+            if (response.ok) {
+                const data = await response.json()
+                setUserDetails({
+                    name: data.name,
+                    email: data.email,
+                    department: data.department,
+                    team: data.team,
+                    sartokBucks: data.sartokBucks ?? 0,
+                    manager: data.manager,
+                })
             }
+        } catch (error) {
+            console.error('Error fetching user details:', error)
+        } finally {
+            setLoadingDetails(false)
         }
+    }
 
+    useEffect(() => {
         if (session?.user?.id) {
             fetchUserDetails()
         }
@@ -158,6 +160,40 @@ export default function TopNav() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <Popover onOpenChange={(open) => open && fetchUserDetails()}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="flex items-center gap-2 hover:bg-accent hover:text-accent-foreground"
+                                aria-label="SharthokBucks summary"
+                            >
+                                <Coins className="h-5 w-5" />
+                                <span className="font-medium">{(userDetails?.sartokBucks ?? 0).toLocaleString()}</span>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72" align="end">
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 font-semibold">
+                                    <Coins className="h-5 w-5 text-amber-500" />
+                                    SharthokBucks Summary
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    You have <strong>{(userDetails?.sartokBucks ?? 0).toLocaleString()} SharthokBucks</strong>.
+                                    You earn SharthokBucks for each rating you complete.
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Matches completed: {Math.floor((userDetails?.sartokBucks ?? 0) / 100)}
+                                </p>
+                                <Link href="/leaderboard">
+                                    <Button variant="secondary" size="sm" className="w-full gap-2">
+                                        <Trophy className="h-4 w-4" />
+                                        View Leaderboard
+                                    </Button>
+                                </Link>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+
                     <Button
                         variant="outline"
                         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
