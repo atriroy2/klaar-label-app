@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
@@ -131,6 +131,10 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
     const [saving, setSaving] = useState(false)
     const [config, setConfig] = useState<Configuration | null>(null)
     const [instances, setInstances] = useState<Instance[]>([])
+    const [instancesNextCursor, setInstancesNextCursor] = useState<string | null | undefined>(undefined) // undefined = not loaded, null = no more, string = cursor
+    const [instancesTotal, setInstancesTotal] = useState<number | null>(null)
+    const [instancesLoadingMore, setInstancesLoadingMore] = useState(false)
+    const instancesScrollSentinelRef = useRef<HTMLDivElement>(null)
     const [isEditing, setIsEditing] = useState(searchParams?.get('edit') === 'true')
     const [selectedInstance, setSelectedInstance] = useState<Instance | null>(null)
     const [completions, setCompletions] = useState<Completion[]>([])
@@ -186,8 +190,11 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
             if (configRes.ok) {
                 const data = await configRes.json()
                 setConfig(data)
-                setInstances(data.instances || [])
-                
+                // Instances list is loaded via paginated API when user opens Instances tab.
+                // Use real total from config so the tab shows correct count (not the capped 100 from data.instances).
+                if (data._count?.instances != null) {
+                    setInstancesTotal(data._count.instances)
+                }
                 // Initialize form data
                 setFormData({
                     name: data.name,
@@ -233,18 +240,52 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
         }
     }, [session, fetchConfig])
 
-    // Fetch instances separately for refresh
-    const fetchInstances = async () => {
+    const INSTANCES_PAGE_SIZE = 30
+
+    // Fetch instances (first page or append next page)
+    const fetchInstances = useCallback(async (append = false) => {
+        const cursor = append ? instancesNextCursor : undefined
+        if (append && (!cursor || instancesLoadingMore)) return
+        if (append) setInstancesLoadingMore(true)
         try {
-            const res = await fetch(`/api/configs/${params.id}/instances`)
+            const url = cursor
+                ? `/api/configs/${params.id}/instances?limit=${INSTANCES_PAGE_SIZE}&cursor=${encodeURIComponent(cursor)}`
+                : `/api/configs/${params.id}/instances?limit=${INSTANCES_PAGE_SIZE}`
+            const res = await fetch(url)
             if (res.ok) {
                 const data = await res.json()
-                setInstances(data)
+                const list = data.instances ?? []
+                if (append) {
+                    setInstances(prev => [...prev, ...list])
+                } else {
+                    setInstances(list)
+                }
+                setInstancesNextCursor(data.nextCursor ?? null)
+                if (data.total !== undefined) setInstancesTotal(data.total)
             }
         } catch (error) {
             console.error('Error fetching instances:', error)
+        } finally {
+            if (append) setInstancesLoadingMore(false)
         }
-    }
+    }, [params.id, instancesNextCursor, instancesLoadingMore])
+
+    // Infinite scroll: load more when sentinel is visible
+    useEffect(() => {
+        if (instancesNextCursor === undefined || instancesNextCursor === null) return
+        const el = instancesScrollSentinelRef.current
+        if (!el) return
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting && instancesNextCursor && !instancesLoadingMore) {
+                    fetchInstances(true)
+                }
+            },
+            { rootMargin: '200px', threshold: 0 }
+        )
+        observer.observe(el)
+        return () => observer.disconnect()
+    }, [instancesNextCursor, instancesLoadingMore, fetchInstances])
 
     const handleSave = async () => {
         setSaving(true)
@@ -618,6 +659,8 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
                     description: `Deleted ${result.deleted} instances`
                 })
                 setInstances([])
+                setInstancesNextCursor(undefined)
+                setInstancesTotal(null)
             } else {
                 const error = await response.json()
                 toast({
@@ -815,7 +858,7 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
                 <TabsList>
                     <TabsTrigger value="details">Details</TabsTrigger>
                     <TabsTrigger value="instances">
-                        Instances ({instances.length})
+                        Instances ({instancesTotal ?? instances.length})
                     </TabsTrigger>
                     <TabsTrigger value="runs">
                         Generation Runs ({config.generationRuns?.length || 0})
@@ -1117,14 +1160,19 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
                     <div className="flex items-center justify-between">
                         <div>
                             <h3 className="text-lg font-semibold">Instances</h3>
-                            <p className="text-muted-foreground">{instances.length} instance{instances.length !== 1 ? 's' : ''}</p>
+                            <p className="text-muted-foreground">
+                                {(instancesTotal ?? instances.length).toLocaleString()} instance{(instancesTotal ?? instances.length) !== 1 ? 's' : ''}
+                                {instancesNextCursor !== undefined && instances.length > 0 && (
+                                    <span className="text-muted-foreground/80"> · scroll for more</span>
+                                )}
+                            </p>
                         </div>
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" onClick={fetchInstances}>
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Refresh
                             </Button>
-                            {instances.length > 0 && (
+                            {((instancesTotal != null && instancesTotal > 0) || instances.length > 0) && (
                                 <Button variant="outline" onClick={handleDeleteInstances}>
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete All
@@ -1258,7 +1306,7 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {instances.slice(0, 50).map(instance => (
+                                        {instances.map(instance => (
                                             <TableRow key={instance.id}>
                                                 {config.variables.map(v => (
                                                     <TableCell key={v.key} className="max-w-[200px] truncate">
@@ -1296,9 +1344,17 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
                                         ))}
                                     </TableBody>
                                 </Table>
-                                {instances.length > 50 && (
-                                    <div className="p-4 text-center text-muted-foreground">
-                                        Showing 50 of {instances.length} instances
+                                {/* Sentinel for infinite scroll */}
+                                {instancesNextCursor && (
+                                    <div ref={instancesScrollSentinelRef} className="h-4 flex items-center justify-center py-4">
+                                        {instancesLoadingMore && (
+                                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                        )}
+                                    </div>
+                                )}
+                                {instancesNextCursor === null && instances.length > 0 && instancesTotal != null && instances.length >= instancesTotal && (
+                                    <div className="p-3 text-center text-sm text-muted-foreground">
+                                        All {(instancesTotal).toLocaleString()} instances loaded
                                     </div>
                                 )}
                             </CardContent>

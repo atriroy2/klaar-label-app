@@ -37,8 +37,14 @@ export async function GET(
             return NextResponse.json({ error: 'Configuration not found' }, { status: 404 })
         }
 
+        const { searchParams } = new URL(request.url)
+        const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '30', 10), 1), 100)
+        const cursor = searchParams.get('cursor') || undefined
+
         const instances = await prisma.promptInstance.findMany({
             where: { configurationId: id },
+            take: limit + 1, // fetch one extra to know if there's a next page
+            ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
             include: {
                 _count: {
                     select: {
@@ -50,7 +56,23 @@ export async function GET(
             orderBy: { createdAt: 'desc' }
         })
 
-        return NextResponse.json(instances)
+        const hasMore = instances.length > limit
+        const items = hasMore ? instances.slice(0, limit) : instances
+        const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].id : null
+
+        // Total count only on first page (no cursor) to avoid extra query on every load-more
+        let total: number | undefined
+        if (!cursor) {
+            total = await prisma.promptInstance.count({
+                where: { configurationId: id }
+            })
+        }
+
+        return NextResponse.json({
+            instances: items,
+            nextCursor,
+            ...(total !== undefined ? { total } : {})
+        })
     } catch (error) {
         console.error('Error fetching instances:', error)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
