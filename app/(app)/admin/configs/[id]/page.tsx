@@ -1168,7 +1168,7 @@ export default function ConfigurationDetailPage({ params }: { params: { id: stri
                             </p>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={fetchInstances}>
+                            <Button variant="outline" size="sm" onClick={() => fetchInstances()}>
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Refresh
                             </Button>
