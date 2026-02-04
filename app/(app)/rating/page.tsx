@@ -22,7 +22,6 @@ function cleanLLMOutput(output: string): string {
     let cleaned = output.trim()
     
     // Remove opening code fence with optional language (```json, ```javascript, ``` etc.)
-    const hadCodeFence = /^```[\w]*\n?/i.test(cleaned)
     cleaned = cleaned.replace(/^```[\w]*\n?/i, '')
     
     // Remove closing code fence
@@ -46,6 +45,8 @@ function cleanLLMOutput(output: string): string {
         }
     }
     
+    // So single newlines render as line breaks in markdown (standard md treats \n as space)
+    cleaned = cleaned.replace(/\n/g, '  \n')
     return cleaned
 }
 
@@ -113,7 +114,7 @@ export default function RatingPage() {
     const optionBRef = useRef<HTMLDivElement>(null)
     const isScrolling = useRef(false)
 
-    // Handle synchronized scrolling
+    // Handle synchronized scrolling (same pixel position so both panels scroll at the same speed)
     const handleScroll = useCallback((source: 'A' | 'B') => {
         if (!syncScroll || isScrolling.current) return
         
@@ -123,13 +124,11 @@ export default function RatingPage() {
         const targetRef = source === 'A' ? optionBRef.current : optionARef.current
         
         if (sourceRef && targetRef) {
-            // Calculate scroll percentage
-            const scrollPercentage = sourceRef.scrollTop / (sourceRef.scrollHeight - sourceRef.clientHeight)
-            // Apply to target
-            targetRef.scrollTop = scrollPercentage * (targetRef.scrollHeight - targetRef.clientHeight)
+            const maxTargetScroll = targetRef.scrollHeight - targetRef.clientHeight
+            // Use same scroll position (pixel-for-pixel) so both panels scroll at the same speed
+            targetRef.scrollTop = Math.min(sourceRef.scrollTop, Math.max(0, maxTargetScroll))
         }
         
-        // Reset flag after a small delay to prevent infinite loops
         setTimeout(() => {
             isScrolling.current = false
         }, 10)
@@ -485,20 +484,20 @@ export default function RatingPage() {
                     </Button>
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
                     {/* Option A */}
-                    <Card className={`transition-all ${selectedOutcome === 'A_BETTER' ? 'ring-2 ring-primary' : ''}`}>
+                    <Card className={`transition-all min-w-0 overflow-hidden ${selectedOutcome === 'A_BETTER' ? 'ring-2 ring-primary' : ''}`}>
                         <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between min-w-0">
                                 <CardTitle className="text-base">Option A</CardTitle>
                                 <Badge variant="outline">Response {match.optionA.index + 1}</Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="overflow-hidden">
+                        <CardContent className="overflow-hidden p-0">
                             <div 
                                 ref={optionARef}
                                 onScroll={() => handleScroll('A')}
-                                className="prose prose-sm max-w-none dark:prose-invert max-h-[400px] overflow-y-auto overflow-x-hidden bg-muted/30 p-4 rounded-md break-words [&_*]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-all"
+                                className="prose prose-sm max-w-none dark:prose-invert h-[400px] overflow-y-auto overflow-x-hidden bg-muted/30 p-4 rounded-b-lg break-words [&_*]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-all"
                             >
                                 <MarkdownPreview content={cleanLLMOutput(match.optionA.output)} />
                             </div>
@@ -506,20 +505,20 @@ export default function RatingPage() {
                     </Card>
 
                     {/* Option B */}
-                    <Card className={`transition-all ${selectedOutcome === 'B_BETTER' ? 'ring-2 ring-primary' : ''}`}>
+                    <Card className={`transition-all min-w-0 overflow-hidden ${selectedOutcome === 'B_BETTER' ? 'ring-2 ring-primary' : ''}`}>
                         <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between min-w-0">
                                 <CardTitle className="text-base">Option B</CardTitle>
                                 <Badge variant="outline">Response {match.optionB.index + 1}</Badge>
                             </div>
                         </CardHeader>
-                        <CardContent className="overflow-hidden">
+                        <CardContent className="overflow-hidden p-0">
                             <div 
                                 ref={optionBRef}
                                 onScroll={() => handleScroll('B')}
-                                className="prose prose-sm max-w-none dark:prose-invert max-h-[400px] overflow-y-auto overflow-x-hidden bg-muted/30 p-4 rounded-md break-words [&_*]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-all"
+                                className="prose prose-sm max-w-none dark:prose-invert h-[400px] overflow-y-auto overflow-x-hidden bg-muted/30 p-4 rounded-b-lg break-words [&_*]:break-words [&_pre]:whitespace-pre-wrap [&_code]:break-all"
                             >
-                                <MarkdownPreview content={cleanLLMOutput(match.optionB.output)} />
+                                <MarkdownPreview content={cleanLLMOutput(match.optionB?.output ?? '')} />
                             </div>
                         </CardContent>
                     </Card>
