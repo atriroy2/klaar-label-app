@@ -58,7 +58,16 @@ export default function UserListPage() {
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
     const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
     const [newUserRole, setNewUserRole] = useState<string>('USER')
+    const [editRole, setEditRole] = useState<string>('USER')
     const { toast } = useToast()
+
+    // Sync edit role when edit dialog opens for a user
+    useEffect(() => {
+        if (isEditUserOpen && selectedUser) {
+            const r = String(selectedUser.role).toUpperCase()
+            setEditRole(r === 'TENANT_ADMIN' ? 'TENANT_ADMIN' : 'USER')
+        }
+    }, [isEditUserOpen, selectedUser])
 
     // Wait for session to load before checking permissions
     useEffect(() => {
@@ -189,38 +198,60 @@ export default function UserListPage() {
     const handleAddUser = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         const formData = new FormData(event.currentTarget)
-        const userData: any = {
-            name: formData.get('name'),
-            email: formData.get('email'),
-            role: newUserRole,
+        const emailsRaw = (formData.get('emails') as string)?.trim() ?? ''
+        const emails = emailsRaw
+            .split(/[\s,]+/)
+            .map((e) => e.trim().toLowerCase())
+            .filter(Boolean)
+        if (emails.length === 0) {
+            toast({
+                title: "Error",
+                description: "Enter at least one email address",
+                variant: "destructive",
+            })
+            return
         }
 
         try {
             const response = await fetch('/api/users', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(userData),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    emails,
+                    role: newUserRole,
+                    name: (formData.get('name') as string)?.trim() || undefined,
+                }),
             })
 
+            const data = await response.json().catch(() => ({}))
+
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: response.statusText }))
-                throw new Error(errorData.error || errorData.message || `Failed to create user: ${response.status} ${response.statusText}`)
+                throw new Error(data.error || data.message || `Failed: ${response.statusText}`)
             }
 
             await fetchUsers()
             setIsAddUserOpen(false)
             setNewUserRole('USER')
+            event.currentTarget.reset()
+
+            const created = data.created ?? 0
+            const updated = data.updated ?? 0
+            const skipped = (data.skipped ?? []).length
+            const errs = (data.errors ?? []).length
+            const parts: string[] = []
+            if (created > 0) parts.push(`${created} added`)
+            if (updated > 0) parts.push(`${updated} upgraded to ${newUserRole === 'TENANT_ADMIN' ? 'Admin' : 'User'}`)
+            if (skipped > 0) parts.push(`${skipped} skipped (other tenant or super admin)`)
+            if (errs > 0) parts.push(`${errs} failed`)
             toast({
-                title: "Success",
-                description: "User created successfully",
+                title: "Done",
+                description: parts.length ? parts.join(', ') : "No changes made",
             })
         } catch (error: any) {
-            console.error('Error creating user:', error)
+            console.error('Error adding users:', error)
             toast({
                 title: "Error",
-                description: error.message || "Failed to create user",
+                description: error.message || "Failed to add or upgrade users",
                 variant: "destructive",
             })
         }
@@ -235,7 +266,7 @@ export default function UserListPage() {
             id: selectedUser.id,
             name: formData.get('name'),
             email: formData.get('email'),
-            role: formData.get('role'),
+            role: editRole,
         }
 
         try {
@@ -343,19 +374,29 @@ export default function UserListPage() {
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Add New User</DialogTitle>
+                                <DialogTitle>Add or upgrade users</DialogTitle>
                                 <DialogDescription>
-                                    Add a new user to your organization.
+                                    Enter one or more emails (comma-separated). New users are created; existing users are upgraded to the selected role.
                                 </DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleAddUser} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="name">Name</Label>
-                                    <Input id="name" name="name" placeholder="John Doe" required />
+                                    <Label htmlFor="emails">Emails</Label>
+                                    <textarea
+                                        id="emails"
+                                        name="emails"
+                                        rows={4}
+                                        className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        placeholder="One or more emails, comma- or space-separated. Existing users will be upgraded to the selected role."
+                                        required
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        New users are created; existing users in your org are upgraded to the selected role.
+                                    </p>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input id="email" name="email" type="email" placeholder="john@example.com" required />
+                                    <Label htmlFor="name">Default name (optional)</Label>
+                                    <Input id="name" name="name" placeholder="e.g. John Doe" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="role">Role</Label>
@@ -374,7 +415,7 @@ export default function UserListPage() {
                                         Cancel
                                     </Button>
                                     <Button type="submit">
-                                        Add User
+                                        Add / Upgrade users
                                     </Button>
                                 </div>
                             </form>
@@ -423,8 +464,8 @@ export default function UserListPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-role">Role</Label>
-                            <Select name="role" defaultValue={selectedUser?.role || 'USER'}>
-                                <SelectTrigger>
+                            <Select value={editRole} onValueChange={setEditRole}>
+                                <SelectTrigger id="edit-role">
                                     <SelectValue placeholder="Select role" />
                                 </SelectTrigger>
                                 <SelectContent>
