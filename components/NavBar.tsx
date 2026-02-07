@@ -138,7 +138,7 @@ export default function NavBar({ className, ...props }: NavProps) {
                             style={{ pointerEvents: 'auto' }}
                         >
                             <MechanicIcon className="h-6 w-6" />
-                            <span>Klaar Label</span>
+                            <span>Klaar Internal</span>
                         </button>
                     </div>
                     

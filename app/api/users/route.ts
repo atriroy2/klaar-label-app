@@ -56,14 +56,70 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json()
-        const { name, email, role } = body
+        const { name, email, emails, role } = body
 
-        // Validate required fields
+        // Bulk add/upgrade: emails array + role
+        if (emails && Array.isArray(emails)) {
+            const roleToUse = role ?? Role.USER
+            const tenantId = (session.user.role === Role.TENANT_ADMIN ||
+                (session.user.role === Role.SUPER_ADMIN && session.user.tenantId))
+                ? session.user.tenantId
+                : null
+            if (session.user.role !== Role.SUPER_ADMIN && !tenantId) {
+                return NextResponse.json({ error: 'Tenant ID not found' }, { status: 400 })
+            }
+            if (roleToUse === Role.SUPER_ADMIN && session.user.role !== Role.SUPER_ADMIN) {
+                return NextResponse.json({ error: 'Cannot create super admin users' }, { status: 403 })
+            }
+            const normalized = [...new Set(
+                emails
+                    .map((e: string) => (typeof e === 'string' ? e.trim().toLowerCase() : ''))
+                    .filter(Boolean)
+            )]
+            const result = { created: 0, updated: 0, skipped: [] as string[], errors: [] as { email: string; message: string }[] }
+            for (const em of normalized) {
+                try {
+                    const existing = await prisma.user.findUnique({ where: { email: em } })
+                    if (existing) {
+                        if (tenantId && existing.tenantId !== tenantId) {
+                            result.skipped.push(em)
+                            continue
+                        }
+                        if (session.user.role === Role.TENANT_ADMIN && existing.role === Role.SUPER_ADMIN) {
+                            result.skipped.push(em)
+                            continue
+                        }
+                        await prisma.user.update({
+                            where: { id: existing.id },
+                            data: { role: roleToUse },
+                        })
+                        result.updated += 1
+                    } else {
+                        await prisma.user.create({
+                            data: {
+                                email: em,
+                                name: (name && String(name).trim()) ? String(name).trim() : null,
+                                role: roleToUse,
+                                ...(tenantId && { tenantId }),
+                            },
+                        })
+                        result.created += 1
+                    }
+                } catch (err: unknown) {
+                    result.errors.push({
+                        email: em,
+                        message: err instanceof Error ? err.message : 'Unknown error',
+                    })
+                }
+            }
+            return NextResponse.json(result)
+        }
+
+        // Single user
         if (!email || !role) {
             return new NextResponse('Missing required fields', { status: 400 })
         }
 
-        // Check if user already exists
         const existingUser = await prisma.user.findUnique({
             where: { email },
         })
