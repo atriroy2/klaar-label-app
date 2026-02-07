@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getBackendHeaders } from '../../backend-headers'
+import { getBackendHeaders } from '../../../backend-headers'
 
 const HUDDLE_API_URL = process.env.HUDDLE_API_URL || process.env.NEXT_PUBLIC_HUDDLE_API_URL || ''
 
