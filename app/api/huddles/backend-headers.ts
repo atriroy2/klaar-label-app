@@ -19,7 +19,7 @@ export async function getBackendHeaders(
         return {
             ok: false,
             response: NextResponse.json(
-                { error: 'Not signed in. Please log in to the Klaar Label app to view huddles.' },
+                { error: 'Not signed in. Please log in to the Klaar Internal app to view huddles.' },
                 { status: 401 }
             ),
         }

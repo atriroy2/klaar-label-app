@@ -55,7 +55,7 @@ async function proxyGet(request: Request) {
                 ...(data as Record<string, unknown>),
                 error: (data as { error?: string }).error ?? 'Unauthorized',
                 detail: process.env.HUDDLE_API_KEY
-                    ? 'Backend rejected the request. Checklist: (1) HUDDLE_API_KEY is the exact same string in both Klaar Label and the backend (copy-paste, no spaces). (2) Backend is deployed with the API-key auth code and reads the env var. (3) Backend compares X-API-Key to that value and accepts when it matches.'
+                    ? 'Backend rejected the request. Checklist: (1) HUDDLE_API_KEY is the exact same string in both Klaar Internal and the backend (copy-paste, no spaces). (2) Backend is deployed with the API-key auth code and reads the env var. (3) Backend compares X-API-Key to that value and accepts when it matches.'
                     : 'The huddle backend could not verify your session. Either (1) set the same NEXTAUTH_SECRET in the backend, or (2) set HUDDLE_API_KEY in this app and configure the backend to accept X-API-Key and X-User-Email.',
             },
             { status: 401 }

@@ -51,7 +51,7 @@ export default function LoginPage() {
                     {/* App Name */}
                     <div className="space-y-2">
                         <h1 className="text-4xl font-bold text-foreground">
-                            Klaar Label
+                            Klaar Internal
                         </h1>
                         <h2 className="text-xl text-muted-foreground">
                         Login to your account
