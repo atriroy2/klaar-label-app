@@ -1,0 +1,308 @@
+'use client'
+
+import { useEffect, useState, useCallback } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import {
+  ArrowLeft,
+  FileText,
+  CheckCircle,
+  Users,
+  MessageSquare,
+  Loader2,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/huddles/StatusBadge'
+import { ParticipantTimeline } from '@/components/huddles/ParticipantTimeline'
+import { TranscriptViewer } from '@/components/huddles/TranscriptViewer'
+import { useToast } from '@/components/ui/use-toast'
+import MarkdownPreview from '@/components/MarkdownPreview'
+import { formatDuration } from '@/lib/huddle-utils'
+import type { HuddleDetail, TranscriptResponse, HuddleStatus } from '@/lib/huddle-types'
+
+const POLL_INTERVAL_MS = 10_000
+
+export default function HuddleDetailPage() {
+  const router = useRouter()
+  const params = useParams()
+  const id = params?.id as string
+  const [huddle, setHuddle] = useState<HuddleDetail | null>(null)
+  const [transcript, setTranscript] = useState<TranscriptResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [unshareDialogOpen, setUnshareDialogOpen] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
+  const { toast } = useToast()
+
+  const fetchDetail = useCallback(async () => {
+    if (!id) return
+    try {
+      const res = await fetch(`/api/huddles/${id}`)
+      if (!res.ok) throw new Error('Failed to load huddle')
+      const data = await res.json()
+      setHuddle(data)
+    } catch {
+      toast({ title: 'Error loading huddle', variant: 'destructive' })
+    }
+  }, [id, toast])
+
+  const fetchTranscript = useCallback(async () => {
+    if (!id) return
+    try {
+      const res = await fetch(`/api/huddles/${id}/transcript?format=both`)
+      if (!res.ok) return
+      const data = await res.json()
+      setTranscript(data)
+    } catch {
+      // optional
+    }
+  }, [id])
+
+  useEffect(() => {
+    if (!id) return
+    setLoading(true)
+    Promise.all([fetchDetail(), fetchTranscript()]).finally(() => setLoading(false))
+  }, [id, fetchDetail, fetchTranscript])
+
+  const notReady = huddle && huddle.status !== 'ready' && huddle.status !== 'failed'
+  useEffect(() => {
+    if (!notReady) return
+    const t = setInterval(() => {
+      fetchDetail()
+      fetchTranscript()
+    }, POLL_INTERVAL_MS)
+    return () => clearInterval(t)
+  }, [notReady, fetchDetail, fetchTranscript])
+
+  const handleShare = async () => {
+    if (!id) return
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/huddles/${id}/share`, { method: 'POST' })
+      if (!res.ok) throw new Error('Share failed')
+      toast({ title: 'Huddle shared' })
+      setShareDialogOpen(false)
+      await fetchDetail()
+    } catch {
+      toast({ title: 'Failed to share', variant: 'destructive' })
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleUnshare = async () => {
+    if (!id) return
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/huddles/${id}/unshare`, { method: 'POST' })
+      if (!res.ok) throw new Error('Unshare failed')
+      toast({ title: 'Huddle unshared' })
+      setUnshareDialogOpen(false)
+      await fetchDetail()
+    } catch {
+      toast({ title: 'Failed to unshare', variant: 'destructive' })
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleRetry = async () => {
+    if (!id) return
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/huddles/admin/retry/${id}`, { method: 'POST' })
+      if (!res.ok) throw new Error('Retry failed')
+      toast({ title: 'Retry started' })
+      await fetchDetail()
+    } catch {
+      toast({ title: 'Retry failed', variant: 'destructive' })
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  if (loading && !huddle) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (!huddle) {
+    return (
+      <div className="space-y-6">
+        <Button variant="ghost" onClick={() => router.push('/huddles')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+        <p className="text-muted-foreground">Huddle not found.</p>
+      </div>
+    )
+  }
+
+  const channelName = huddle.slack_channel_name ?? 'Unknown Channel'
+  const startDate = huddle.started_at ? new Date(huddle.started_at) : null
+  const endDate = huddle.ended_at ? new Date(huddle.ended_at) : null
+  const dateStr = startDate?.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) ?? '—'
+  const timeStr = startDate && endDate
+    ? `${startDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} – ${endDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+    : '—'
+  const durationStr = huddle.duration_seconds != null ? `(${formatDuration(huddle.duration_seconds)})` : ''
+  const canUnshare = huddle.is_shared // spec: "If current user is the sharer or a host participant" — we don't have current user id from backend, so show Unshare when shared; backend will enforce
+
+  const statusMessage: Record<HuddleStatus, string> = {
+    recording: 'This huddle is still being recorded...',
+    transcribing: 'Transcript is being generated. This usually takes 1-2 minutes.',
+    processing: 'AI is analyzing the transcript...',
+    ready: '',
+    failed: 'Processing failed.',
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center gap-4">
+        <Button variant="ghost" size="sm" onClick={() => router.push('/huddles')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">#{channelName}</h1>
+          <p className="text-muted-foreground">
+            {dateStr} · {timeStr} {durationStr}
+          </p>
+          <div className="flex items-center gap-2 mt-2">
+            <StatusBadge status={huddle.status} />
+            {huddle.is_shared && (
+              <span className="text-sm text-muted-foreground">Shared ✓</span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {huddle.status === 'failed' && (
+            <Button variant="destructive" onClick={handleRetry} disabled={actionLoading}>
+              Retry Processing
+            </Button>
+          )}
+          {!huddle.is_shared && (
+            <>
+              <Button variant="outline" onClick={() => setShareDialogOpen(true)}>
+                Share with Everyone
+              </Button>
+              <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Share huddle</DialogTitle>
+                    <DialogDescription>
+                      This will make the huddle transcript visible to all users in your organization. Continue?
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShareDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleShare} disabled={actionLoading}>Share</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+          {huddle.is_shared && canUnshare && (
+            <>
+              <Button variant="outline" onClick={() => setUnshareDialogOpen(true)}>
+                Unshare
+              </Button>
+              <Dialog open={unshareDialogOpen} onOpenChange={setUnshareDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Unshare huddle</DialogTitle>
+                    <DialogDescription>
+                      This will make the huddle transcript visible only to participants. Continue?
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setUnshareDialogOpen(false)}>Cancel</Button>
+                    <Button variant="destructive" onClick={handleUnshare} disabled={actionLoading}>Unshare</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
+        </div>
+      </div>
+
+      {(huddle.status === 'recording' || huddle.status === 'transcribing' || huddle.status === 'processing' || huddle.status === 'failed') && (
+        <Card>
+          <CardContent className="py-6">
+            <p className="text-muted-foreground">
+              {statusMessage[huddle.status]}
+              {huddle.status === 'failed' && ' Use "Retry Processing" to try again.'}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {huddle.status === 'ready' && (
+        <>
+          <Card>
+            <CardHeader>
+              <h2 className="flex items-center gap-2 text-lg font-semibold">
+                <FileText className="h-5 w-5" />
+                Summary
+              </h2>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {huddle.summary_english && (
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <MarkdownPreview content={huddle.summary_english} />
+                </div>
+              )}
+              {huddle.action_items.length > 0 && (
+                <div>
+                  <h3 className="flex items-center gap-2 font-medium mb-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Action Items
+                  </h3>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {huddle.action_items.map((item, i) => (
+                      <li key={i}>
+                        {item.assignee ? `${item.assignee}: ${item.text}` : item.text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {huddle.key_topics.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {huddle.key_topics.map((t) => (
+                    <Badge key={t} variant="secondary">{t}</Badge>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <ParticipantTimeline
+            participants={huddle.participants}
+            startedAt={huddle.started_at}
+            endedAt={huddle.ended_at}
+          />
+
+          {transcript && transcript.utterances.length > 0 && (
+            <TranscriptViewer utterances={transcript.utterances} />
+          )}
+        </>
+      )}
+    </div>
+  )
+}
