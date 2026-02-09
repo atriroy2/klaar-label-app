@@ -35,6 +35,7 @@ import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/huddles/StatusBadge'
 import { ParticipantTimeline } from '@/components/huddles/ParticipantTimeline'
 import { TranscriptViewer } from '@/components/huddles/TranscriptViewer'
+import { RecordingPlayer } from '@/components/huddles/RecordingPlayer'
 import { useToast } from '@/components/ui/use-toast'
 import MarkdownPreview from '@/components/MarkdownPreview'
 import { formatDuration } from '@/lib/huddle-utils'
@@ -346,6 +347,10 @@ export default function HuddleDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {huddle.has_recording && (
+            <RecordingPlayer huddleId={huddle.id} />
+          )}
 
           <ParticipantTimeline
             participants={huddle.participants}

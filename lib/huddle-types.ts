@@ -27,7 +27,13 @@ export interface HuddleDetail {
   key_topics: string[]
   is_shared: boolean
   shared_by: string | null
+  has_recording: boolean
   participants: ParticipantDetail[]
+}
+
+export interface RecordingResponse {
+  url: string
+  source: 'gcs' | 'recall'
 }
 
 export interface ActionItem {
