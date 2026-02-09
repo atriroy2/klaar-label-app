@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   FileText,
   CheckCircle,
+  Download,
   Loader2,
   Trash2,
 } from 'lucide-react'
@@ -36,6 +37,7 @@ import { TranscriptViewer } from '@/components/huddles/TranscriptViewer'
 import { RecordingPlayer } from '@/components/huddles/RecordingPlayer'
 import { useToast } from '@/components/ui/use-toast'
 import MarkdownPreview from '@/components/MarkdownPreview'
+import { generateHuddlePdf } from '@/lib/generate-huddle-pdf'
 
 import type { HuddleDetail, TranscriptResponse, HuddleStatus } from '@/lib/huddle-types'
 
@@ -156,6 +158,11 @@ export default function HuddleDetailPage() {
     }
   }
 
+  const handleDownloadPdf = () => {
+    if (!huddle) return
+    generateHuddlePdf(huddle, transcript)
+  }
+
   if (loading && !huddle) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
@@ -224,6 +231,12 @@ export default function HuddleDetailPage() {
           {huddle.status === 'failed' && (
             <Button variant="destructive" onClick={handleRetry} disabled={actionLoading}>
               Retry Processing
+            </Button>
+          )}
+          {huddle.status === 'ready' && (
+            <Button variant="outline" onClick={handleDownloadPdf} className="gap-1">
+              <Download className="h-4 w-4" />
+              Download PDF
             </Button>
           )}
           {!huddle.is_shared && (
@@ -363,7 +376,7 @@ export default function HuddleDetailPage() {
                       {transcript.utterances.map((u) => (
                         <div key={u.id} className="text-sm">
                           <span className="font-medium">{u.speaker_name}: </span>
-                          <span>{u.text_english || u.text_original}</span>
+                          <span>{u.text_original}</span>
                         </div>
                       ))}
                     </div>
