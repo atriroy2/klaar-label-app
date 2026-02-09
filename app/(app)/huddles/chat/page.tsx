@@ -56,6 +56,7 @@ export default function HuddleChatPage() {
         body: JSON.stringify({
           message: toSend,
           conversation_history: history,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       })
 
