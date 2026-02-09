@@ -9,6 +9,7 @@ import {
   Users,
   MessageSquare,
   Loader2,
+  Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -20,6 +21,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/huddles/StatusBadge'
 import { ParticipantTimeline } from '@/components/huddles/ParticipantTimeline'
@@ -40,6 +51,7 @@ export default function HuddleDetailPage() {
   const [loading, setLoading] = useState(true)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [unshareDialogOpen, setUnshareDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const { toast } = useToast()
 
@@ -125,6 +137,21 @@ export default function HuddleDetailPage() {
       await fetchDetail()
     } catch {
       toast({ title: 'Retry failed', variant: 'destructive' })
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!id) return
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/huddles/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Delete failed')
+      toast({ title: 'Huddle deleted' })
+      router.push('/huddles')
+    } catch {
+      toast({ title: 'Failed to delete huddle', variant: 'destructive' })
     } finally {
       setActionLoading(false)
     }
@@ -238,6 +265,34 @@ export default function HuddleDetailPage() {
               </Dialog>
             </>
           )}
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 text-red-500 mr-1" />
+              Delete
+            </Button>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete huddle?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete this huddle, including the transcript, summary, and all associated data. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  disabled={actionLoading}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

@@ -21,3 +21,22 @@ export async function GET(
     const data = await res.json().catch(() => ({}))
     return NextResponse.json(data, { status: res.status })
 }
+
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    if (!HUDDLE_API_URL) {
+        return NextResponse.json({ error: 'Huddle API URL not configured' }, { status: 502 })
+    }
+    const auth = await getBackendHeaders(request)
+    if (!auth.ok) return auth.response
+    const { id } = await params
+    const res = await fetch(`${HUDDLE_API_URL}/api/huddles/${id}`, {
+        method: 'DELETE',
+        headers: auth.headers,
+        cache: 'no-store',
+    })
+    const data = await res.json().catch(() => ({}))
+    return NextResponse.json(data, { status: res.status })
+}
