@@ -158,9 +158,14 @@ export default function HuddleDetailPage() {
     }
   }
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!huddle) return
-    generateHuddlePdf(huddle, transcript)
+    try {
+      await generateHuddlePdf(huddle, transcript)
+    } catch (err) {
+      console.error('Failed to generate PDF:', err)
+      toast({ title: 'Failed to generate PDF', variant: 'destructive' })
+    }
   }
 
   if (loading && !huddle) {

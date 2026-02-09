@@ -2,6 +2,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatTimestamp, formatDuration } from './huddle-utils'
 import type { HuddleDetail, TranscriptResponse } from './huddle-types'
+import { registerDevanagariFont, DEVANAGARI_FONT } from './pdf-fonts'
 
 /**
  * Generate a PDF report for a huddle containing:
@@ -9,12 +10,18 @@ import type { HuddleDetail, TranscriptResponse } from './huddle-types'
  * 2. Summary + action items
  * 3. Tags
  * 4. Transcript table (original + english side by side)
+ *
+ * Uses Noto Sans Devanagari font to support Hindi/Devanagari script.
  */
-export function generateHuddlePdf(
+export async function generateHuddlePdf(
   huddle: HuddleDetail,
   transcript: TranscriptResponse | null
-): void {
+): Promise<void> {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+  // Register Devanagari-capable font (supports Latin + Devanagari)
+  await registerDevanagariFont(doc)
+
   const pageWidth = doc.internal.pageSize.getWidth()
   const margin = 15
   const contentWidth = pageWidth - margin * 2
@@ -28,14 +35,14 @@ export function generateHuddlePdf(
       y = margin
     }
     doc.setFontSize(size)
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(DEVANAGARI_FONT, 'bold')
     doc.text(text, margin, y)
     y += size * 0.5 + 2
   }
 
   function addText(text: string, size: number = 10, style: 'normal' | 'bold' = 'normal') {
     doc.setFontSize(size)
-    doc.setFont('helvetica', style)
+    doc.setFont(DEVANAGARI_FONT, style)
     const lines = doc.splitTextToSize(text, contentWidth)
     for (const line of lines) {
       if (y > 280) {
@@ -157,6 +164,7 @@ export function generateHuddlePdf(
       body: tableBody,
       margin: { left: margin, right: margin },
       styles: {
+        font: DEVANAGARI_FONT,
         fontSize: 8,
         cellPadding: 2,
         overflow: 'linebreak',
@@ -166,6 +174,7 @@ export function generateHuddlePdf(
         fillColor: [60, 60, 60],
         textColor: [255, 255, 255],
         fontStyle: 'bold',
+        font: DEVANAGARI_FONT,
         fontSize: 8,
       },
       columnStyles: {
