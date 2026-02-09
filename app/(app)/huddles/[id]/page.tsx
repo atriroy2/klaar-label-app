@@ -6,8 +6,6 @@ import {
   ArrowLeft,
   FileText,
   CheckCircle,
-  Users,
-  MessageSquare,
   Loader2,
   Trash2,
 } from 'lucide-react'
@@ -38,7 +36,7 @@ import { TranscriptViewer } from '@/components/huddles/TranscriptViewer'
 import { RecordingPlayer } from '@/components/huddles/RecordingPlayer'
 import { useToast } from '@/components/ui/use-toast'
 import MarkdownPreview from '@/components/MarkdownPreview'
-import { formatDuration } from '@/lib/huddle-utils'
+
 import type { HuddleDetail, TranscriptResponse, HuddleStatus } from '@/lib/huddle-types'
 
 const POLL_INTERVAL_MS = 10_000
@@ -178,15 +176,21 @@ export default function HuddleDetailPage() {
     )
   }
 
-  const channelName = huddle.slack_channel_name ?? 'Unknown Channel'
   const startDate = huddle.started_at ? new Date(huddle.started_at) : null
-  const endDate = huddle.ended_at ? new Date(huddle.ended_at) : null
   const dateStr = startDate?.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) ?? '—'
-  const timeStr = startDate && endDate
-    ? `${startDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} – ${endDate.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
-    : '—'
-  const durationStr = huddle.duration_seconds != null ? `(${formatDuration(huddle.duration_seconds)})` : ''
-  const canUnshare = huddle.is_shared // spec: "If current user is the sharer or a host participant" — we don't have current user id from backend, so show Unshare when shared; backend will enforce
+
+  // Build participant label: "Shreyas, Prerona & Shruti" or "Shreyas, Prerona, Shruti & 2 more"
+  const firstNames = huddle.participants.map((p) => p.name.split(' ')[0])
+  const participantLabel =
+    firstNames.length <= 3
+      ? firstNames.length === 2
+        ? `${firstNames[0]} & ${firstNames[1]}`
+        : firstNames.length === 3
+          ? `${firstNames[0]}, ${firstNames[1]} & ${firstNames[2]}`
+          : firstNames[0] || 'Unknown'
+      : `${firstNames.slice(0, 3).join(', ')} & ${firstNames.length - 3} more`
+
+  const canUnshare = huddle.is_shared
 
   const statusMessage: Record<HuddleStatus, string> = {
     recording: 'This huddle is still being recorded...',
@@ -207,10 +211,8 @@ export default function HuddleDetailPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">#{channelName}</h1>
-          <p className="text-muted-foreground">
-            {dateStr} · {timeStr} {durationStr}
-          </p>
+          <h1 className="text-2xl font-bold">{participantLabel}</h1>
+          <p className="text-muted-foreground">{dateStr}</p>
           <div className="flex items-center gap-2 mt-2">
             <StatusBadge status={huddle.status} />
             {huddle.is_shared && (
@@ -349,7 +351,26 @@ export default function HuddleDetailPage() {
           </Card>
 
           {huddle.has_recording && (
-            <RecordingPlayer huddleId={huddle.id} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <RecordingPlayer huddleId={huddle.id} />
+              {transcript && transcript.utterances.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <h2 className="text-lg font-semibold">Transcript</h2>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="max-h-[400px] overflow-y-auto space-y-2">
+                      {transcript.utterances.map((u) => (
+                        <div key={u.id} className="text-sm">
+                          <span className="font-medium">{u.speaker_name}: </span>
+                          <span>{u.text_english || u.text_original}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
 
           <ParticipantTimeline
