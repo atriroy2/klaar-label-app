@@ -13,7 +13,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Table,
   TableBody,
@@ -259,7 +258,7 @@ export default function AdminHuddlesPage() {
                     className="h-8"
                   />
                 </div>
-                <ScrollArea className="max-h-[240px]">
+                <div className="max-h-[240px] overflow-y-auto">
                   <div className="p-2 space-y-1">
                     {participantsFiltered.length === 0 ? (
                       <p className="text-xs text-muted-foreground py-4 text-center">
@@ -285,7 +284,7 @@ export default function AdminHuddlesPage() {
                       ))
                     )}
                   </div>
-                </ScrollArea>
+                </div>
                 {selectedEmails.size > 0 && (
                   <div className="p-2 border-t">
                     <Button
@@ -336,7 +335,11 @@ export default function AdminHuddlesPage() {
               {filteredHuddles.map((h) => {
                 const idPreview = h.id.slice(0, 6)
                 return (
-                  <TableRow key={h.id}>
+                  <TableRow
+                    key={h.id}
+                    className="cursor-pointer"
+                    onClick={() => router.push(`/huddles/${h.id}`)}
+                  >
                     <TableCell className="font-mono text-xs font-medium">
                       <Tooltip>
                         <TooltipTrigger asChild>

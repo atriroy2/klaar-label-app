@@ -179,7 +179,7 @@ export default function HuddleDetailPage() {
   if (!huddle) {
     return (
       <div className="space-y-6">
-        <Button variant="ghost" onClick={() => router.push('/huddles')}>
+        <Button variant="ghost" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
@@ -215,7 +215,7 @@ export default function HuddleDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push('/huddles')}>
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
