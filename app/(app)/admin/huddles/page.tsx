@@ -338,7 +338,7 @@ export default function AdminHuddlesPage() {
                   <TableRow
                     key={h.id}
                     className="cursor-pointer"
-                    onClick={() => router.push(`/huddles/${h.id}`)}
+                    onClick={() => router.push(`/admin/huddles/${h.id}`)}
                   >
                     <TableCell className="font-mono text-xs font-medium">
                       <Tooltip>

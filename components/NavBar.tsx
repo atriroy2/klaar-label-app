@@ -312,7 +312,7 @@ export default function NavBar({ className, ...props }: NavProps) {
                                         }}
                                         className={cn(
                                             "flex w-full items-center gap-2 rounded-md px-9 py-2 text-sm hover:bg-accent hover:text-accent-foreground text-left cursor-pointer",
-                                            pathname === "/admin/huddles" && "bg-accent/50 text-accent-foreground"
+                                            pathname.startsWith("/admin/huddles") && "bg-accent/50 text-accent-foreground"
                                         )}
                                         style={{ pointerEvents: 'auto' }}
                                     >
