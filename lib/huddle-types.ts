@@ -15,6 +15,18 @@ export interface HuddleListItem {
   is_shared: boolean
 }
 
+export interface AdminHuddleListItem {
+  id: string
+  slack_channel_name: string | null
+  started_at: string | null
+  ended_at: string | null
+  duration_seconds: number | null
+  status: HuddleStatus
+  participant_count: number
+  participants: ParticipantSummary[]
+  is_shared: boolean
+}
+
 export interface HuddleDetail {
   id: string
   slack_channel_name: string | null
