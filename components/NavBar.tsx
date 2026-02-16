@@ -303,6 +303,22 @@ export default function NavBar({ className, ...props }: NavProps) {
                                         <Users className="h-4 w-4" />
                                         User List
                                     </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            handleNavigation('/admin/huddles')
+                                        }}
+                                        className={cn(
+                                            "flex w-full items-center gap-2 rounded-md px-9 py-2 text-sm hover:bg-accent hover:text-accent-foreground text-left cursor-pointer",
+                                            pathname === "/admin/huddles" && "bg-accent/50 text-accent-foreground"
+                                        )}
+                                        style={{ pointerEvents: 'auto' }}
+                                    >
+                                        <MessageSquare className="h-4 w-4" />
+                                        All Huddles
+                                    </button>
                                 </CollapsibleContent>
                             </Collapsible>
                         )}

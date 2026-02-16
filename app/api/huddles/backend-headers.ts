@@ -33,6 +33,7 @@ export async function getBackendHeaders(
         headers['X-User-Email'] = (session.user.email ?? '').trim()
         headers['X-User-Id'] = session.user.id ?? ''
         headers['X-User-Name'] = (session.user.name ?? '').trim()
+        headers['X-User-Role'] = session.user.role ?? 'USER'
     }
     return { ok: true, headers }
 }
