@@ -12,7 +12,8 @@ interface SourceCitationProps {
 
 export function SourceCitation({ source }: SourceCitationProps) {
   const router = useRouter()
-  const channel = source.channel_name ? `#${source.channel_name}` : 'Huddle'
+  const label = source.meeting_title
+    || (source.channel_name ? `#${source.channel_name}` : 'Meeting')
   const timeRange = `${formatTimestamp(source.start_time_seconds)}–${formatTimestamp(source.end_time_seconds)}`
   const snippet = source.text_snippet.length > 100
     ? source.text_snippet.slice(0, 100) + '…'
@@ -27,7 +28,7 @@ export function SourceCitation({ source }: SourceCitationProps) {
         <FileText className="h-4 w-4 shrink-0 text-muted-foreground mt-0.5" />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium text-muted-foreground">
-            {channel} · {source.date} · {timeRange}
+            {label} · {source.date} · {timeRange}
           </p>
           <p className="text-sm mt-0.5 line-clamp-2">"{snippet}"</p>
           <button

@@ -91,6 +91,8 @@ export interface TranscriptUtterance {
 export interface ChatSource {
   huddle_id: string
   channel_name: string | null
+  meeting_title: string | null
+  meeting_platform: string | null
   date: string
   start_time_seconds: number
   end_time_seconds: number
