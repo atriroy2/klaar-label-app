@@ -366,11 +366,13 @@ export default function HuddlesPage() {
                       <div className="flex items-center gap-1.5">
                         {h.meeting_platform === 'zoom' ? (
                           <Video className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                        ) : h.meeting_platform === 'google_meet' ? (
+                          <Video className="h-3.5 w-3.5 text-green-500 shrink-0" />
                         ) : (
                           <MessageSquare className="h-3.5 w-3.5 text-purple-500 shrink-0" />
                         )}
-                        <span className="text-muted-foreground truncate max-w-[80px]" title={h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom') : (h.slack_channel_name || 'Slack')}>
-                          {h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom') : (h.slack_channel_name || 'Slack')}
+                        <span className="text-muted-foreground truncate max-w-[80px]" title={h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom') : h.meeting_platform === 'google_meet' ? (h.meeting_title || 'Google Meet') : (h.slack_channel_name || 'Slack')}>
+                          {h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom') : h.meeting_platform === 'google_meet' ? (h.meeting_title || 'Google Meet') : (h.slack_channel_name || 'Slack')}
                         </span>
                       </div>
                     </TableCell>
