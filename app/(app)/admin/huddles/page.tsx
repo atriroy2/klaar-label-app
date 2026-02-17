@@ -3,7 +3,7 @@
 import { useMemo, useEffect, useState, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Link2, Users, ChevronDown, X } from 'lucide-react'
+import { Loader2, Link2, Users, ChevronDown, X, MessageSquare, Video } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -323,7 +323,7 @@ export default function AdminHuddlesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-24">ID</TableHead>
-                <TableHead>Channel</TableHead>
+                <TableHead>Source</TableHead>
                 <TableHead>Date & time</TableHead>
                 <TableHead className="w-20">Duration</TableHead>
                 <TableHead className="max-w-[220px]">Participants</TableHead>
@@ -350,8 +350,17 @@ export default function AdminHuddlesPage() {
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">
-                      {h.slack_channel_name || '—'}
+                    <TableCell className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        {h.meeting_platform === 'zoom' ? (
+                          <Video className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                        ) : (
+                          <MessageSquare className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                        )}
+                        <span className="text-muted-foreground truncate" title={h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom Meeting') : (h.slack_channel_name || '—')}>
+                          {h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom Meeting') : (h.slack_channel_name || '—')}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
                       {formatDateRange(h)}

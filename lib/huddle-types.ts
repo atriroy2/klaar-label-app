@@ -1,4 +1,5 @@
 export type HuddleStatus = 'recording' | 'transcribing' | 'processing' | 'ready' | 'failed'
+export type MeetingPlatform = 'slack' | 'zoom'
 
 export interface HuddleListItem {
   id: string
@@ -13,6 +14,8 @@ export interface HuddleListItem {
   participant_count: number
   participants: ParticipantSummary[]
   is_shared: boolean
+  meeting_platform: MeetingPlatform
+  meeting_title: string | null
 }
 
 export interface AdminHuddleListItem {
@@ -25,6 +28,8 @@ export interface AdminHuddleListItem {
   participant_count: number
   participants: ParticipantSummary[]
   is_shared: boolean
+  meeting_platform: MeetingPlatform
+  meeting_title: string | null
 }
 
 export interface HuddleDetail {
@@ -41,6 +46,8 @@ export interface HuddleDetail {
   shared_by: string | null
   has_recording: boolean
   participants: ParticipantDetail[]
+  meeting_platform: MeetingPlatform
+  meeting_title: string | null
 }
 
 export interface RecordingResponse {
@@ -107,4 +114,16 @@ export interface TranscriptResponse {
 export interface ChatResponse {
   response: string
   sources: ChatSource[]
+}
+
+export interface ZoomJoinRequest {
+  meeting_url: string
+  bot_name: string
+  meeting_title?: string
+}
+
+export interface ZoomJoinResponse {
+  huddle_id: string
+  bot_id: string
+  status: string
 }
