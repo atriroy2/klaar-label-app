@@ -354,11 +354,13 @@ export default function AdminHuddlesPage() {
                       <div className="flex items-center gap-1.5">
                         {h.meeting_platform === 'zoom' ? (
                           <Video className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                        ) : h.meeting_platform === 'google_meet' ? (
+                          <Video className="h-3.5 w-3.5 text-green-500 shrink-0" />
                         ) : (
                           <MessageSquare className="h-3.5 w-3.5 text-purple-500 shrink-0" />
                         )}
-                        <span className="text-muted-foreground truncate" title={h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom Meeting') : (h.slack_channel_name || '—')}>
-                          {h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom Meeting') : (h.slack_channel_name || '—')}
+                        <span className="text-muted-foreground truncate" title={h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom Meeting') : h.meeting_platform === 'google_meet' ? (h.meeting_title || 'Google Meet') : (h.slack_channel_name || '—')}>
+                          {h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom Meeting') : h.meeting_platform === 'google_meet' ? (h.meeting_title || 'Google Meet') : (h.slack_channel_name || '—')}
                         </span>
                       </div>
                     </TableCell>

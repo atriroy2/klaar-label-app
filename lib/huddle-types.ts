@@ -1,5 +1,5 @@
 export type HuddleStatus = 'recording' | 'transcribing' | 'processing' | 'ready' | 'failed'
-export type MeetingPlatform = 'slack' | 'zoom'
+export type MeetingPlatform = 'slack' | 'zoom' | 'google_meet'
 
 export interface HuddleListItem {
   id: string
@@ -123,6 +123,18 @@ export interface ZoomJoinRequest {
 }
 
 export interface ZoomJoinResponse {
+  huddle_id: string
+  bot_id: string
+  status: string
+}
+
+export interface GoogleMeetJoinRequest {
+  meeting_url: string
+  bot_name: string
+  meeting_title?: string
+}
+
+export interface GoogleMeetJoinResponse {
   huddle_id: string
   bot_id: string
   status: string

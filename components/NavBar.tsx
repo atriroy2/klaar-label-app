@@ -237,6 +237,21 @@ export default function NavBar({ className, ...props }: NavProps) {
                             <Video className="h-5 w-5" />
                             Zoom
                         </button>
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                handleNavigation('/google-meet')
+                            }}
+                            className={cn(
+                                "flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground text-left cursor-pointer",
+                                pathname === "/google-meet" && "bg-accent text-accent-foreground"
+                            )}
+                            style={{ pointerEvents: 'auto' }}
+                        >
+                            <Video className="h-5 w-5" />
+                            Google Meet
+                        </button>
                     </div>
 
                     {/* Admin Section */}

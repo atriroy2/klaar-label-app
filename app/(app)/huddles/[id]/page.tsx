@@ -224,12 +224,12 @@ export default function HuddleDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">
-            {huddle.meeting_platform === 'zoom' && huddle.meeting_title
+            {(huddle.meeting_platform === 'zoom' || huddle.meeting_platform === 'google_meet') && huddle.meeting_title
               ? huddle.meeting_title
               : participantLabel}
           </h1>
           <p className="text-muted-foreground">
-            {huddle.meeting_platform === 'zoom' && huddle.meeting_title
+            {(huddle.meeting_platform === 'zoom' || huddle.meeting_platform === 'google_meet') && huddle.meeting_title
               ? `${participantLabel} · ${dateStr}`
               : dateStr}
           </p>
