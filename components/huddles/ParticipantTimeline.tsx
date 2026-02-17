@@ -2,29 +2,33 @@
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users } from 'lucide-react'
+import { Users, Check } from 'lucide-react'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import type { ParticipantDetail } from '@/lib/huddle-types'
+import type { ParticipantDetail, MeetingPlatform } from '@/lib/huddle-types'
 
 interface ParticipantTimelineProps {
   participants: ParticipantDetail[]
   startedAt: string | null
   endedAt: string | null
+  meetingPlatform?: MeetingPlatform
 }
 
 export function ParticipantTimeline({
   participants,
   startedAt,
   endedAt,
+  meetingPlatform,
 }: ParticipantTimelineProps) {
   const startMs = startedAt ? new Date(startedAt).getTime() : 0
   const endMs = endedAt ? new Date(endedAt).getTime() : startMs + 1
   const durationMs = Math.max(1, endMs - startMs)
+
+  const isNonSlack = meetingPlatform === 'zoom' || meetingPlatform === 'google_meet'
 
   const formatTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit' }) : '—'
@@ -50,7 +54,7 @@ export function ParticipantTimeline({
             const widthPct = ((leftMs - joinedMs) / durationMs) * 100
             const tooltip = `Joined ${formatTime(p.joined_at)} · Left ${formatTime(p.left_at)}`
             return (
-              <TooltipProvider key={p.email ?? p.name}>
+              <TooltipProvider key={p.id ?? p.email ?? p.name}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="space-y-1">
@@ -58,6 +62,17 @@ export function ParticipantTimeline({
                         <span className="font-medium text-sm">{p.name}</span>
                         {p.is_host && (
                           <Badge variant="secondary" className="text-xs">Host</Badge>
+                        )}
+                        {isNonSlack && p.user_id && (
+                          <Badge variant="outline" className="text-xs gap-0.5 text-green-600 border-green-200">
+                            <Check className="h-2.5 w-2.5" />
+                            Mapped
+                          </Badge>
+                        )}
+                        {isNonSlack && !p.user_id && (
+                          <Badge variant="outline" className="text-xs text-amber-600 border-amber-200">
+                            Unmapped
+                          </Badge>
                         )}
                       </div>
                       {p.email && (
