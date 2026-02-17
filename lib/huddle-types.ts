@@ -48,6 +48,8 @@ export interface HuddleDetail {
   participants: ParticipantDetail[]
   meeting_platform: MeetingPlatform
   meeting_title: string | null
+  created_by: string | null
+  is_creator: boolean
 }
 
 export interface RecordingResponse {
@@ -66,6 +68,8 @@ export interface ParticipantSummary {
 }
 
 export interface ParticipantDetail {
+  id: string
+  user_id: string | null
   name: string
   email: string | null
   joined_at: string | null
@@ -138,4 +142,15 @@ export interface GoogleMeetJoinResponse {
   huddle_id: string
   bot_id: string
   status: string
+}
+
+export interface AppUser {
+  id: string
+  email: string
+  name: string
+}
+
+export interface ParticipantMappingEntry {
+  participant_id: string
+  user_id: string
 }

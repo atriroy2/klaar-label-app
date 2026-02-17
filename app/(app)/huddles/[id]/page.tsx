@@ -33,6 +33,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/huddles/StatusBadge'
 import { ParticipantTimeline } from '@/components/huddles/ParticipantTimeline'
+import { ParticipantMapper } from '@/components/huddles/ParticipantMapper'
 import { TranscriptViewer } from '@/components/huddles/TranscriptViewer'
 import { RecordingPlayer } from '@/components/huddles/RecordingPlayer'
 import { useToast } from '@/components/ui/use-toast'
@@ -403,7 +404,18 @@ export default function HuddleDetailPage() {
             participants={huddle.participants}
             startedAt={huddle.started_at}
             endedAt={huddle.ended_at}
+            meetingPlatform={huddle.meeting_platform}
           />
+
+          {huddle.is_creator &&
+            (huddle.meeting_platform === 'zoom' || huddle.meeting_platform === 'google_meet') &&
+            huddle.participants.some((p) => !p.user_id) && (
+              <ParticipantMapper
+                huddleId={huddle.id}
+                participants={huddle.participants}
+                onMappingComplete={fetchDetail}
+              />
+            )}
 
           {transcript && transcript.utterances.length > 0 && (
             <TranscriptViewer utterances={transcript.utterances} />
