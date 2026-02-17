@@ -2,7 +2,7 @@
 
 import { useMemo, useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Link2, Users, ChevronDown, X } from 'lucide-react'
+import { Loader2, Link2, Users, ChevronDown, X, MessageSquare, Video } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -331,6 +331,7 @@ export default function HuddlesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-24">ID</TableHead>
+                <TableHead className="w-28">Source</TableHead>
                 <TableHead>Date & time</TableHead>
                 <TableHead className="w-20">Duration</TableHead>
                 <TableHead className="max-w-[180px]">Participants</TableHead>
@@ -360,6 +361,18 @@ export default function HuddlesPage() {
                           {h.id}
                         </TooltipContent>
                       </Tooltip>
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        {h.meeting_platform === 'zoom' ? (
+                          <Video className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                        ) : (
+                          <MessageSquare className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                        )}
+                        <span className="text-muted-foreground truncate max-w-[80px]" title={h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom') : (h.slack_channel_name || 'Slack')}>
+                          {h.meeting_platform === 'zoom' ? (h.meeting_title || 'Zoom') : (h.slack_channel_name || 'Slack')}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
                       {formatDateRange(h)}
@@ -427,7 +440,7 @@ export default function HuddlesPage() {
                 ref={sentinelRef}
                 onClick={(e) => e.stopPropagation()}
               >
-                <TableCell colSpan={8} className="h-16 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-16 text-center text-muted-foreground">
                   {loadingMore ? (
                     <Loader2 className="h-5 w-5 animate-spin inline" />
                   ) : (
