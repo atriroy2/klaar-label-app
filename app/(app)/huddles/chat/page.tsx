@@ -11,7 +11,7 @@ import type { ChatSource } from '@/lib/huddle-types'
 const SUGGESTIONS = [
   'What did we decide about the goals module?',
   'Summarize all discussions from last week',
-  'What action items came out of recent huddles?',
+  'What action items came out of recent meetings?',
 ]
 
 interface Message {
@@ -90,7 +90,7 @@ export default function HuddleChatPage() {
       <div className="flex items-center justify-between mb-3 shrink-0">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Bot className="h-7 w-7" />
-          Huddle Knowledge Base
+          Meeting Knowledge Base
         </h1>
         <Button
           variant="outline"
@@ -105,7 +105,7 @@ export default function HuddleChatPage() {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center max-w-lg mx-auto">
             <p className="text-muted-foreground mb-6">
-              Ask me anything about your past huddles. I can search across all transcripts you have access to.
+              Ask me anything about your past meetings. I can search across all transcripts you have access to.
             </p>
             <div className="flex flex-col gap-2 w-full">
               {SUGGESTIONS.map((q) => (
@@ -146,7 +146,7 @@ export default function HuddleChatPage() {
       <div className="border-t p-4 bg-background shrink-0">
         <div className="flex gap-2 max-w-3xl mx-auto">
           <Input
-            placeholder="Ask about your huddles..."
+            placeholder="Ask about your meetings..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
