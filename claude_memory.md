@@ -102,7 +102,9 @@ interface HuddleDetail {
 - Receives ALL participants (both mapped and unmapped)
 - Uses fuzzy matching (`lib/fuzzy-match.ts`) to suggest user mappings
 - Features:
+  - Entire section is collapsible (chevron on heading) to save page space — open by default
   - "Accept All" button to accept all auto-suggestions at once (shows when 2+ pending suggestions)
+  - "Save (N)" button in the header bar next to Accept All for quick access (bottom save button also kept)
   - Individual accept/pick-different for each unmapped participant
   - Collapsible section for already-mapped participants with "Change" button for remapping
   - Saves mappings via `PATCH /api/huddles/{id}/participants/map`
@@ -115,7 +117,12 @@ interface HuddleDetail {
 
 ## Changes Made (Changelog)
 
-### 2026-03-04: ParticipantMapper UI Improvements
+### 2026-03-04: ParticipantMapper UI Improvements (round 2)
+- Made entire Map Participants section collapsible (chevron on heading, open by default)
+- Added "Save (N)" button in header bar next to "Accept All" for quick access
+- Description text hidden when section is collapsed
+
+### 2026-03-04: ParticipantMapper UI Improvements (round 1)
 - Added "Accept All" button beside "Map Participants" heading
 - Added collapsible accordion for already-mapped participants with remapping capability
 - Updated parent page condition from `some(p => !p.user_id)` to `participants.length > 0`
