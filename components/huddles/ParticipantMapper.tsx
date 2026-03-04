@@ -50,6 +50,7 @@ export function ParticipantMapper({
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [saving, setSaving] = useState(false)
   const [openPopoverId, setOpenPopoverId] = useState<string | null>(null)
+  const [sectionOpen, setSectionOpen] = useState(true)
   const [mappedOpen, setMappedOpen] = useState(false)
   const [remapPopoverId, setRemapPopoverId] = useState<string | null>(null)
   const [remappings, setRemappings] = useState<Record<string, string>>({})
@@ -254,34 +255,62 @@ export function ParticipantMapper({
   }
 
   return (
+    <Collapsible open={sectionOpen} onOpenChange={setSectionOpen}>
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-lg font-semibold">
-            <UserCheck className="h-5 w-5" />
-            Map Participants
-            {unmappedParticipants.length > 0 && (
-              <span className="text-muted-foreground font-normal text-base">
-                ({unmappedParticipants.length} unmapped)
-              </span>
-            )}
-          </h3>
-          {pendingSuggestions.length > 1 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={handleAcceptAllSuggestions}
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 text-lg font-semibold hover:text-muted-foreground transition-colors"
             >
-              <CheckCheck className="h-4 w-4" />
-              Accept All ({pendingSuggestions.length})
-            </Button>
-          )}
+              <ChevronDown
+                className={cn(
+                  'h-5 w-5 transition-transform',
+                  !sectionOpen && '-rotate-90'
+                )}
+              />
+              <UserCheck className="h-5 w-5" />
+              Map Participants
+              {unmappedParticipants.length > 0 && (
+                <span className="text-muted-foreground font-normal text-base">
+                  ({unmappedParticipants.length} unmapped)
+                </span>
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <div className="flex items-center gap-2">
+            {pendingSuggestions.length > 1 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={handleAcceptAllSuggestions}
+              >
+                <CheckCheck className="h-4 w-4" />
+                Accept All ({pendingSuggestions.length})
+              </Button>
+            )}
+            {mappingsToSave.length > 0 && (
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                size="sm"
+                className="gap-1"
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Save ({mappingsToSave.length})
+              </Button>
+            )}
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Match meeting participants to users so they can access this recording.
-        </p>
+        {sectionOpen && (
+          <p className="text-sm text-muted-foreground">
+            Match meeting participants to users so they can access this recording.
+          </p>
+        )}
       </CardHeader>
+      <CollapsibleContent>
       <CardContent className="space-y-4">
         {/* ─── Unmapped participants ──────────────────────────── */}
         {mappingRows.map((row) => {
@@ -574,6 +603,8 @@ export function ParticipantMapper({
           </Collapsible>
         )}
       </CardContent>
+      </CollapsibleContent>
     </Card>
+    </Collapsible>
   )
 }
