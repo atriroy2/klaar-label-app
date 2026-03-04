@@ -414,7 +414,7 @@ export default function HuddleDetailPage() {
             session?.user?.role === Role.TENANT_ADMIN ||
             session?.user?.role === Role.SUPER_ADMIN) &&
             (huddle.meeting_platform === 'zoom' || huddle.meeting_platform === 'google_meet') &&
-            huddle.participants.some((p) => !p.user_id) && (
+            huddle.participants.length > 0 && (
               <ParticipantMapper
                 huddleId={huddle.id}
                 participants={huddle.participants}
