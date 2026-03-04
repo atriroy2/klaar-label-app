@@ -348,7 +348,7 @@ export default function NavBar({ className, ...props }: NavProps) {
                                         style={{ pointerEvents: 'auto' }}
                                     >
                                         <MessageSquare className="h-4 w-4" />
-                                        All Huddles
+                                        All Meetings
                                     </button>
                                 </CollapsibleContent>
                             </Collapsible>
