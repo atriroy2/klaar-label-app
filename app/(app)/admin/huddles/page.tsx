@@ -67,6 +67,7 @@ export default function AdminHuddlesPage() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [selectedEmails, setSelectedEmails] = useState<Set<string>>(new Set())
+  const [selectedPlatforms, setSelectedPlatforms] = useState<Set<string>>(new Set())
   const [participantSearch, setParticipantSearch] = useState('')
   const sentinelRef = useRef<HTMLTableRowElement | null>(null)
   const { toast } = useToast()
@@ -116,20 +117,36 @@ export default function AdminHuddlesPage() {
     })
   }
 
-  // Client-side filter by selected participants
-  const filteredHuddles = useMemo(() => {
-    if (selectedEmails.size === 0) return huddles
-    return huddles.filter((h) =>
-      h.participants.some((p) => p.email && selectedEmails.has(p.email))
-    )
-  }, [huddles, selectedEmails])
+  const togglePlatform = (platform: string) => {
+    setSelectedPlatforms((prev) => {
+      const next = new Set(prev)
+      if (next.has(platform)) next.delete(platform)
+      else next.add(platform)
+      return next
+    })
+  }
 
-  const hasActiveFilters = from !== '' || to !== '' || selectedEmails.size > 0
+  // Client-side filter by selected participants and platform
+  const filteredHuddles = useMemo(() => {
+    let result = huddles
+    if (selectedEmails.size > 0) {
+      result = result.filter((h) =>
+        h.participants.some((p) => p.email && selectedEmails.has(p.email))
+      )
+    }
+    if (selectedPlatforms.size > 0) {
+      result = result.filter((h) => selectedPlatforms.has(h.meeting_platform))
+    }
+    return result
+  }, [huddles, selectedEmails, selectedPlatforms])
+
+  const hasActiveFilters = from !== '' || to !== '' || selectedEmails.size > 0 || selectedPlatforms.size > 0
 
   const clearAllFilters = () => {
     setFrom('')
     setTo('')
     setSelectedEmails(new Set())
+    setSelectedPlatforms(new Set())
     setParticipantSearch('')
   }
 
@@ -211,9 +228,9 @@ export default function AdminHuddlesPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">All Huddles</h1>
+        <h1 className="text-2xl font-bold tracking-tight">All Meetings</h1>
         <p className="text-sm text-muted-foreground">
-          View all huddles across the organization. Content is not shown for privacy.
+          View all meetings across the organization. Content is not shown for privacy.
         </p>
       </div>
 
@@ -299,6 +316,60 @@ export default function AdminHuddlesPage() {
                 )}
               </PopoverContent>
             </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-9 gap-1.5">
+                  <Video className="h-4 w-4" />
+                  Platform
+                  {selectedPlatforms.size > 0 && (
+                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-medium">
+                      {selectedPlatforms.size}
+                    </span>
+                  )}
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 p-2" align="start">
+                <div className="space-y-1">
+                  <label className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={selectedPlatforms.has('zoom')}
+                      onCheckedChange={() => togglePlatform('zoom')}
+                    />
+                    <Video className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                    Zoom
+                  </label>
+                  <label className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={selectedPlatforms.has('google_meet')}
+                      onCheckedChange={() => togglePlatform('google_meet')}
+                    />
+                    <Video className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                    Google Meet
+                  </label>
+                  <label className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 cursor-pointer text-sm">
+                    <Checkbox
+                      checked={selectedPlatforms.has('slack')}
+                      onCheckedChange={() => togglePlatform('slack')}
+                    />
+                    <MessageSquare className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                    Slack
+                  </label>
+                </div>
+                {selectedPlatforms.size > 0 && (
+                  <div className="pt-2 border-t mt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs w-full"
+                      onClick={() => setSelectedPlatforms(new Set())}
+                    >
+                      Clear selection
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
             {hasActiveFilters && (
               <Button
                 variant="ghost"
@@ -311,7 +382,7 @@ export default function AdminHuddlesPage() {
               </Button>
             )}
             <div className="ml-auto text-xs text-muted-foreground">
-              {total} huddle{total !== 1 ? 's' : ''} total
+              {total} meeting{total !== 1 ? 's' : ''} total
             </div>
           </div>
         </CardContent>
@@ -421,9 +492,9 @@ export default function AdminHuddlesPage() {
         </TooltipProvider>
         {filteredHuddles.length === 0 && !loading && (
           <div className="py-12 text-center text-muted-foreground text-sm">
-            {selectedEmails.size > 0 && huddles.length > 0
-              ? 'No huddles match the selected participants.'
-              : 'No huddle recordings found.'}
+            {(selectedEmails.size > 0 || selectedPlatforms.size > 0) && huddles.length > 0
+              ? 'No meetings match the selected filters.'
+              : 'No meeting recordings found.'}
           </div>
         )}
       </Card>

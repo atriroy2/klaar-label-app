@@ -117,6 +117,13 @@ interface HuddleDetail {
 
 ## Changes Made (Changelog)
 
+### 2026-03-04: Admin Page Rename & Platform Filter
+- Renamed "All Huddles" to "All Meetings" in NavBar menu and page heading/description
+- Added meeting platform filter (Zoom, Google Meet, Slack) as a popover with checkboxes in the filter bar
+- Platform filter is client-side, same pattern as participant filter
+- Updated empty state messages to say "meetings" instead of "huddles"
+- Files changed: `components/NavBar.tsx`, `app/(app)/admin/huddles/page.tsx`
+
 ### 2026-03-04: ParticipantMapper UI Improvements (round 2)
 - Made entire Map Participants section collapsible (chevron on heading, open by default)
 - Added "Save (N)" button in header bar next to "Accept All" for quick access
