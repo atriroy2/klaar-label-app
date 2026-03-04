@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import {
   ArrowLeft,
@@ -37,6 +38,7 @@ import { ParticipantMapper } from '@/components/huddles/ParticipantMapper'
 import { TranscriptViewer } from '@/components/huddles/TranscriptViewer'
 import { RecordingPlayer } from '@/components/huddles/RecordingPlayer'
 import { useToast } from '@/components/ui/use-toast'
+import { Role } from '@/lib/auth'
 import MarkdownPreview from '@/components/MarkdownPreview'
 import { generateHuddlePdf } from '@/lib/generate-huddle-pdf'
 
@@ -45,6 +47,7 @@ import type { HuddleDetail, TranscriptResponse, HuddleStatus } from '@/lib/huddl
 const POLL_INTERVAL_MS = 10_000
 
 export default function HuddleDetailPage() {
+  const { data: session } = useSession()
   const router = useRouter()
   const params = useParams()
   const id = params?.id as string
@@ -407,7 +410,9 @@ export default function HuddleDetailPage() {
             meetingPlatform={huddle.meeting_platform}
           />
 
-          {huddle.is_creator &&
+          {(huddle.is_creator ||
+            session?.user?.role === Role.TENANT_ADMIN ||
+            session?.user?.role === Role.SUPER_ADMIN) &&
             (huddle.meeting_platform === 'zoom' || huddle.meeting_platform === 'google_meet') &&
             huddle.participants.some((p) => !p.user_id) && (
               <ParticipantMapper
