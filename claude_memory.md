@@ -163,6 +163,7 @@ interface HuddleDetail {
 
 ## Deployment History
 
+- **2026-03-05 (round 2)**: Role sync to backend deployed — `syncRoleToBackend()` in users route, fires on admin role changes via PATCH and POST
 - **2026-03-05**: All frontend changes deployed and verified working — ParticipantMapper (collapsible, Accept All, Save button, remap), admin visibility fix, "All Meetings" rename, platform filter
 
 ## Known Issues
