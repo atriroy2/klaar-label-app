@@ -1,6 +1,6 @@
 # Claude Memory — klaar-label-app (Frontend)
 
-> Last updated: 2026-03-04
+> Last updated: 2026-03-05
 > This file is a persistent memory store for Claude across sessions. Update it when significant context is established.
 
 ---
@@ -117,6 +117,11 @@ interface HuddleDetail {
 
 ## Changes Made (Changelog)
 
+### 2026-03-05: Role Sync to Backend
+- **Problem**: Backend now verifies admin roles from its own `users.role` DB column (security fix). When frontend admin UI changes a user's role, the backend DB needs to be updated too.
+- **Fix**: Added `syncRoleToBackend()` helper to `app/api/users/route.ts`. Both PATCH (single user edit) and POST (bulk add/upgrade) now fire-and-forget call `PATCH {HUDDLE_API_URL}/api/users/sync-role` with `{ email, role }` after updating the frontend DB.
+- File changed: `app/api/users/route.ts`
+
 ### 2026-03-04: Admin Page Rename & Platform Filter
 - Renamed "All Huddles" to "All Meetings" in NavBar menu and page heading/description
 - Added meeting platform filter (Zoom, Google Meet, Slack) as a popover with checkboxes in the filter bar
@@ -156,7 +161,10 @@ interface HuddleDetail {
 
 ---
 
-## Pending / Known Issues
+## Deployment History
+
+- **2026-03-05**: All frontend changes deployed and verified working — ParticipantMapper (collapsible, Accept All, Save button, remap), admin visibility fix, "All Meetings" rename, platform filter
+
+## Known Issues
 
 - TypeScript compilation shows some pre-existing module resolution warnings for `@/components/ui/*` paths — these are not blocking and existed before our changes
-- Auto-assign rules + backfill work (migration_007, backfill script) needs to be deployed on the backend side

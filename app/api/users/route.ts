@@ -4,6 +4,51 @@ import { authOptions } from '@/lib/auth'
 import { Role, Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 
+const HUDDLE_API_URL = process.env.HUDDLE_API_URL || process.env.NEXT_PUBLIC_HUDDLE_API_URL || ''
+
+/**
+ * Sync a user's role to the backend (klaar-earl-code).
+ * Fire-and-forget — logs errors but doesn't block the frontend operation.
+ */
+async function syncRoleToBackend(
+    email: string,
+    role: string,
+    session: { user: { email?: string | null; id: string; name?: string | null; role: string } }
+) {
+    if (!HUDDLE_API_URL) {
+        console.warn('[sync-role] HUDDLE_API_URL not set — skipping backend role sync')
+        return
+    }
+    const apiKey = process.env.HUDDLE_API_KEY?.trim()
+    if (!apiKey) {
+        console.warn('[sync-role] HUDDLE_API_KEY not set — skipping backend role sync')
+        return
+    }
+
+    try {
+        const res = await fetch(`${HUDDLE_API_URL}/api/users/sync-role`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': apiKey,
+                'X-User-Email': (session.user.email ?? '').trim(),
+                'X-User-Id': session.user.id,
+                'X-User-Name': (session.user.name ?? '').trim(),
+            },
+            body: JSON.stringify({ email, role }),
+        })
+
+        if (!res.ok) {
+            const body = await res.text()
+            console.error(`[sync-role] Backend returned ${res.status}: ${body}`)
+        } else {
+            console.log(`[sync-role] Synced role for ${email} to ${role}`)
+        }
+    } catch (err) {
+        console.error('[sync-role] Failed to sync role to backend:', err instanceof Error ? err.message : err)
+    }
+}
+
 export async function GET() {
     try {
         const session = await getServerSession(authOptions)
@@ -93,6 +138,8 @@ export async function POST(request: Request) {
                             where: { id: existing.id },
                             data: { role: roleToUse },
                         })
+                        // Sync role change to backend
+                        syncRoleToBackend(em, roleToUse, session).catch(() => {})
                         result.updated += 1
                     } else {
                         await prisma.user.create({
@@ -258,6 +305,11 @@ export async function PATCH(request: Request) {
             where: { id },
             data: updateData,
         })
+
+        // Sync role change to backend (fire-and-forget)
+        if (role && user.email) {
+            syncRoleToBackend(user.email, role, session).catch(() => {})
+        }
 
         // Transform the response to include status
         const transformedUser = {
