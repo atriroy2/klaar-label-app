@@ -119,13 +119,15 @@ function stripJsonBlocks(text: string): string {
 }
 
 export async function POST(request: Request) {
-  // Auth check
-  const session = await getServerSession(authOptions)
-  if (!session?.user) {
-    return NextResponse.json(
-      { error: 'Not signed in' },
-      { status: 401 }
-    )
+  // Auth check — optional for local PoC testing
+  let userId = 'anonymous'
+  try {
+    const session = await getServerSession(authOptions)
+    if (session?.user) {
+      userId = session.user.email || session.user.id || 'anonymous'
+    }
+  } catch {
+    // Auth not available — continue without it for PoC
   }
 
   const body = await request.json().catch(() => ({}))
@@ -139,9 +141,36 @@ export async function POST(request: Request) {
   }
 
   const agentSessionId = session_id || `web-${Date.now()}`
-  const userId = session.user.email || session.user.id || 'anonymous'
 
   try {
+    // Determine if we need to create a new session or reuse an existing one.
+    // ADK web ignores client-provided IDs and generates its own UUIDs.
+    // If the frontend sends back a server-assigned UUID, we reuse it directly.
+    let actualSessionId = agentSessionId
+    const isServerSession = agentSessionId && !agentSessionId.startsWith('web-')
+
+    if (!isServerSession) {
+      // First call — create a new ADK session
+      const sessionUrl = `${AGENT_API_URL}/apps/${ADK_APP_NAME}/users/${encodeURIComponent(userId)}/sessions`
+      const sessionRes = await fetch(sessionUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: {} }),
+      }).catch((e) => {
+        console.error('[goals/chat] Session creation failed:', e)
+        return null
+      })
+      if (sessionRes?.ok) {
+        const sessionData = await sessionRes.json().catch(() => null)
+        if (sessionData?.id) {
+          actualSessionId = sessionData.id
+          console.log('[goals/chat] Created new ADK session:', actualSessionId)
+        }
+      }
+    } else {
+      console.log('[goals/chat] Reusing existing ADK session:', actualSessionId)
+    }
+
     // Call ADK agent's /run endpoint (sync mode)
     const agentResponse = await fetch(`${AGENT_API_URL}/run`, {
       method: 'POST',
@@ -149,7 +178,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         app_name: ADK_APP_NAME,
         user_id: userId,
-        session_id: agentSessionId,
+        session_id: actualSessionId,
         new_message: {
           role: 'user',
           parts: [{ text: message }],
@@ -175,14 +204,14 @@ export async function POST(request: Request) {
     return NextResponse.json({
       text: conversationalText || (goals ? `Here are ${goals.length} goals I generated:` : ''),
       goals,
-      session_id: agentSessionId,
+      session_id: actualSessionId,
     })
   } catch (e) {
     console.error('[goals/chat] Failed to reach ADK agent:', e)
     return NextResponse.json(
       {
         error: 'Cannot reach AI agent',
-        text: 'I couldn\'t connect to the AI agent. Make sure `adk web` is running on port 8080.',
+        text: 'I couldn\'t connect to the AI agent. Make sure `adk web` is running.',
       },
       { status: 502 }
     )

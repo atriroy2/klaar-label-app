@@ -21,7 +21,6 @@ import {
     MessageSquare,
     Bot,
     Video,
-    Target,
 } from "lucide-react"
 import {
     Collapsible,
@@ -197,16 +196,16 @@ export default function NavBar({ className, ...props }: NavProps) {
                             type="button"
                             onClick={(e) => {
                                 e.stopPropagation()
-                                handleNavigation('/goals')
+                                handleNavigation('/chatbot')
                             }}
                             className={cn(
                                 "flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground text-left cursor-pointer",
-                                pathname.startsWith("/goals") && "bg-accent text-accent-foreground"
+                                pathname.startsWith("/chatbot") && "bg-accent text-accent-foreground"
                             )}
                             style={{ pointerEvents: 'auto' }}
                         >
-                            <Target className="h-5 w-5" />
-                            Goals
+                            <Bot className="h-5 w-5" />
+                            ChatBot Test
                         </button>
                         <button
                             type="button"
