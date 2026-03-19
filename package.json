@@ -46,6 +46,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "date-fns": "^3.6.0",
+    "json5": "^2.2.3",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.469.0",

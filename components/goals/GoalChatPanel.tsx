@@ -74,7 +74,7 @@ var MC: Record<string, string> = { NUMERIC: "#3B82F6", PERCENTAGE: "#8B5CF6", CU
 function deepClone<T>(obj: T): T { return JSON.parse(JSON.stringify(obj)); }
 
 // ── API Helper ──
-async function sendToAgent(message: string, sessionId: string): Promise<{ text: string; goals: Goal[] | null }> {
+async function sendToAgent(message: string, sessionId: string): Promise<{ text: string; goals: Goal[] | null; session_id?: string }> {
   try {
     const res = await fetch("/api/goals/chat", {
       method: "POST",
@@ -85,7 +85,7 @@ async function sendToAgent(message: string, sessionId: string): Promise<{ text: 
     if (!res.ok) {
       return { text: data.text || data.error || "Something went wrong.", goals: null };
     }
-    return { text: data.text || "", goals: data.goals || null };
+    return { text: data.text || "", goals: data.goals || null, session_id: data.session_id };
   } catch (e) {
     return { text: "Could not reach the AI agent. Make sure `adk web` is running.", goals: null };
   }
@@ -527,6 +527,9 @@ function ChatView({ onBack, sessionId }: { onBack: () => void; sessionId: string
   var [currentGoals, setCurrentGoals] = useState<Goal[] | null>(null);
   var [glowKRs, setGlowKRs] = useState(false);
 
+  // Track server-assigned session ID (ADK generates its own, ignores ours)
+  var serverSessionId = useRef<string>(sessionId);
+
   var endRef = useRef<HTMLDivElement>(null);
   var didInit = useRef(false);
 
@@ -580,7 +583,9 @@ function ChatView({ onBack, sessionId }: { onBack: () => void; sessionId: string
     // Build the message to send to the agent
     var agentMessage = "Create goals for " + HRMS.person.title + " in the " + HRMS.person.department + " team (" + HRMS.person.businessUnit + " unit), reporting to " + HRMS.manager.name + " (" + HRMS.manager.title + "), for " + HRMS.timePeriod.name + " (" + HRMS.timePeriod.range + "). Focus areas: " + summary + ". 3 key results per goal.";
 
-    var result = await sendToAgent(agentMessage, sessionId);
+    var result = await sendToAgent(agentMessage, serverSessionId.current);
+    // Track the server-assigned session ID for subsequent calls
+    if (result.session_id) serverSessionId.current = result.session_id;
 
     clearInterval(iv);
     setProg(100);
@@ -608,7 +613,9 @@ function ChatView({ onBack, sessionId }: { onBack: () => void; sessionId: string
     setState("refining");
     setTyping(true); scroll();
 
-    var result = await sendToAgent(userText, sessionId);
+    var result = await sendToAgent(userText, serverSessionId.current);
+    // Track the server-assigned session ID for subsequent calls
+    if (result.session_id) serverSessionId.current = result.session_id;
 
     setTyping(false);
 
