@@ -121,7 +121,7 @@ export async function POST(request: Request) {
 
   // Build the Klaar API payload for the objective
   const metricData = mapMetricForKlaar(
-    (goal as Record<string, unknown>).metric as Record<string, unknown> || null
+    (goal as unknown as Record<string, unknown>).metric as Record<string, unknown> || null
   )
 
   const klaarPayload: Record<string, unknown> = {
