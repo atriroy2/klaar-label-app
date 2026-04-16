@@ -21,6 +21,7 @@ import {
     MessageSquare,
     Bot,
     Video,
+    Sparkles,
 } from "lucide-react"
 import {
     Collapsible,
@@ -191,6 +192,21 @@ export default function NavBar({ className, ...props }: NavProps) {
                         >
                             <Trophy className="h-5 w-5" />
                             Leaderboard
+                        </button>
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                handleNavigation('/coaching')
+                            }}
+                            className={cn(
+                                "flex w-full items-center justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground text-left cursor-pointer",
+                                pathname.startsWith("/coaching") && "bg-accent text-accent-foreground"
+                            )}
+                            style={{ pointerEvents: 'auto' }}
+                        >
+                            <Sparkles className="h-5 w-5" />
+                            Coaching
                         </button>
                         <button
                             type="button"

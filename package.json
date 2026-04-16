@@ -12,6 +12,7 @@
     "@auth/prisma-adapter": "^1.0.0",
     "@google-cloud/pubsub": "^4.11.0",
     "@google-cloud/storage": "^7.16.0",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.0.1",
     "@prisma/client": "^6.6.0",
     "@radix-ui/react-accordion": "^1.2.2",
