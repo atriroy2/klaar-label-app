@@ -1,0 +1,116 @@
+'use client'
+
+import { useState } from 'react'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import TeamSetup from '@/components/coaching/TeamSetup'
+import CoachingSession from '@/components/coaching/CoachingSession'
+import TranscriptBrowser from '@/components/coaching/TranscriptBrowser'
+import { Employee, MeetingPair, TranscriptLine, CoachingSuggestion, MeetingSummary, CoachingTab } from '@/lib/coaching/types'
+
+export default function CoachingPage() {
+  const [currentTab, setCurrentTab] = useState<CoachingTab>('setup')
+  const [selectedManager, setSelectedManager] = useState<Employee | null>(null)
+  const [selectedReport, setSelectedReport] = useState<Employee | null>(null)
+  const [currentTranscript, setCurrentTranscript] = useState<TranscriptLine[]>([])
+  const [suggestions, setSuggestions] = useState<CoachingSuggestion[]>([])
+  const [summary, setSummary] = useState<MeetingSummary | null>(null)
+  const [sessionKey, setSessionKey] = useState(0)
+
+  const handleStartSession = (manager: Employee, report: Employee) => {
+    setSelectedManager(manager)
+    setSelectedReport(report)
+    setCurrentTranscript([])
+    setSuggestions([])
+    setSummary(null)
+    setSessionKey(prev => prev + 1)
+    setCurrentTab('session')
+  }
+
+  const handleLoadTranscript = (transcript: TranscriptLine[]) => {
+    setCurrentTranscript(transcript)
+    setSuggestions([])
+    setSummary(null)
+    setCurrentTab('session')
+  }
+
+  const handleEndSession = () => {
+    setSelectedManager(null)
+    setSelectedReport(null)
+    setCurrentTranscript([])
+    setSuggestions([])
+    setSummary(null)
+    setCurrentTab('setup')
+  }
+
+  return (
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
+      <div className="flex-shrink-0 px-6 py-4 border-b border-border">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Coaching Studio</h1>
+          <p className="text-sm text-muted-foreground mt-1">Real-time coaching for 1:1 meetings</p>
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Tabs value={currentTab} onValueChange={(val) => setCurrentTab(val as CoachingTab)} className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-shrink-0 border-b border-border px-6">
+            <TabsList className="bg-transparent border-0 gap-4 p-0 w-full justify-start rounded-none h-auto">
+              <TabsTrigger
+                value="setup"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-0 font-medium"
+              >
+                Team Setup
+              </TabsTrigger>
+              <TabsTrigger
+                value="session"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-0 font-medium"
+              >
+                Coaching Session
+              </TabsTrigger>
+              <TabsTrigger
+                value="transcripts"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-0 font-medium"
+              >
+                Sample Transcripts
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="setup" className="flex-1 overflow-auto p-6">
+            <TeamSetup onStartSession={handleStartSession} />
+          </TabsContent>
+
+          <TabsContent value="session" className="flex-1 overflow-hidden p-0">
+            {selectedManager && selectedReport ? (
+              <CoachingSession
+                key={sessionKey}
+                manager={selectedManager}
+                report={selectedReport}
+                initialTranscript={currentTranscript}
+                suggestions={suggestions}
+                summary={summary}
+                onSuggestionsUpdate={setSuggestions}
+                onSummaryUpdate={setSummary}
+                onEnd={handleEndSession}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                <p>Select a manager and report from the Team Setup tab to begin</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="transcripts" className="flex-1 overflow-auto p-6">
+            <TranscriptBrowser
+              onSelectTranscript={handleLoadTranscript}
+              onManagerReportSelected={(manager, report) => {
+                setSelectedManager(manager)
+                setSelectedReport(report)
+              }}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  )
+}

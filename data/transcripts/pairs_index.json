@@ -1,0 +1,183 @@
+{
+  "pairs": [
+    {
+      "id": 1,
+      "folder": "01-arjun-kavita",
+      "type": "direct",
+      "manager": { "name": "Arjun Mehta", "role": "CEO & Founder", "gender": "M" },
+      "report": { "name": "Kavita Reddy", "role": "VP Engineering", "gender": "F" },
+      "manager_patterns": ["MANAGER_DOMINATING", "VAGUE_FEEDBACK"],
+      "dynamic": "CEO pushing VP on cross-functional communication with Sales and SSO delays. Arjun tends to monologue about strategy.",
+      "arc": "Jan: Setting ambitious Q1 targets. Feb: SSO delay surfaces, Arjun frustrated. Mar: Q1 review — mixed results, Arjun gives vague 'communicate better' feedback. Apr: Q2 reset, Arjun slightly more specific after reflection."
+    },
+    {
+      "id": 2,
+      "folder": "02-arjun-sanjay",
+      "type": "direct",
+      "manager": { "name": "Arjun Mehta", "role": "CEO & Founder", "gender": "M" },
+      "report": { "name": "Sanjay Iyer", "role": "VP Sales", "gender": "M" },
+      "manager_patterns": ["MANAGER_DOMINATING", "VAGUE_FEEDBACK"],
+      "report_patterns": ["ACCOUNTABILITY_DEFLECTION"],
+      "dynamic": "CEO pressing VP Sales on pipeline predictability. Sanjay is charismatic and deflects with optimism. Arjun says 'pipeline needs to be better' without naming specific deals.",
+      "arc": "Jan: Optimistic, big targets set. Feb: January miss surfaces, Arjun starts pressing. Mar: Q1 ends at 75% — tense review, Arjun monologues about 'predictability'. Apr: Reset with MEDDPICC mandate, more structured."
+    },
+    {
+      "id": 3,
+      "folder": "03-arjun-neha",
+      "type": "direct",
+      "manager": { "name": "Arjun Mehta", "role": "CEO & Founder", "gender": "M" },
+      "report": { "name": "Neha Kapoor", "role": "Head of People & Ops", "gender": "F" },
+      "manager_patterns": ["VAGUE_FEEDBACK"],
+      "report_patterns": [],
+      "dynamic": "CEO nudging Head of People to be more decisive on underperformers. Neha is warm and empathetic but avoids hard conversations. Arjun's feedback is vague — 'be more decisive' without naming who.",
+      "arc": "Jan: Attrition discussed generally. Feb: Engineer departure, comp issue surfaces. Mar: Arjun directly asks about PIPs — Neha deflects with 'we're coaching them'. Apr: Arjun is more specific, names Dev as PIP candidate."
+    },
+    {
+      "id": 4,
+      "folder": "04-arjun-vikram-skip",
+      "type": "skip-level",
+      "manager": { "name": "Arjun Mehta", "role": "CEO & Founder", "gender": "M" },
+      "report": { "name": "Vikram Desai", "role": "EM Backend", "gender": "M" },
+      "skip_over": "Kavita Reddy",
+      "manager_patterns": [],
+      "dynamic": "CEO skip-level with EM. Arjun is more curious here (gathering info, not directing). Vikram is candid about his struggles. Arjun sees the delegation problem from above.",
+      "arc": "Jan: Intro/rapport building, Arjun asks about team. Feb: Vikram mentions Ravi's silence issue — Arjun probes. Mar: Arjun hears about migration delays, realizes Vikram is the bottleneck. Apr: Arjun gently raises delegation, Vikram is defensive."
+    },
+    {
+      "id": 5,
+      "folder": "05-kavita-vikram",
+      "type": "direct",
+      "manager": { "name": "Kavita Reddy", "role": "VP Engineering", "gender": "F" },
+      "report": { "name": "Vikram Desai", "role": "EM Backend", "gender": "M" },
+      "manager_patterns": ["VAGUE_FEEDBACK"],
+      "dynamic": "VP coaching EM to stop being the hero and start developing his team. Kavita sees the pattern but her feedback on soft skills is vague because she's not in his 1:1s.",
+      "arc": "Jan: Target-setting, Kavita emphasizes team growth alongside technical goals. Feb: SSO delay traced back to Ravi not escalating — Kavita asks if Vikram is checking in enough. Mar: Q1 review, Kavita names the delegation pattern directly. Apr: Kavita sets specific delegation KR, coaches Vikram on letting Priya lead incidents."
+    },
+    {
+      "id": 6,
+      "folder": "06-kavita-deepa",
+      "type": "direct",
+      "manager": { "name": "Kavita Reddy", "role": "VP Engineering", "gender": "F" },
+      "report": { "name": "Deepa Nair", "role": "EM Frontend & Design", "gender": "F" },
+      "manager_patterns": [],
+      "dynamic": "VP coaching EM on shipping discipline vs perfectionism. Kavita is direct but empathetic. Deepa is self-aware but struggles to change the pattern.",
+      "arc": "Jan: Dashboard redesign kickoff, Kavita sets clear Feb milestone. Feb: On track, positive. Mar: Late design change incident — Kavita has to be direct about the cost. Apr: Design freeze rule set, Deepa accepts it. Good meeting."
+    },
+    {
+      "id": 7,
+      "folder": "07-kavita-rohan",
+      "type": "direct",
+      "manager": { "name": "Kavita Reddy", "role": "VP Engineering", "gender": "F" },
+      "report": { "name": "Rohan Gupta", "role": "Staff Engineer", "gender": "M" },
+      "manager_patterns": [],
+      "dynamic": "VP managing Staff Engineer — retention risk + over-engineering tendency. Rohan is brilliant and knows it. Kavita needs to challenge him on pragmatism while keeping him engaged and retained.",
+      "arc": "Jan: Architecture discussion, Kavita gently pushes for simpler collab engine approach. Feb: Rohan mentions recruiter interest — retention alarm. Mar: Comp conversation + mentoring feedback (Rohan takes over mentees' explanations). Apr: Comp adjustment delivered, Rohan re-engaged."
+    },
+    {
+      "id": 8,
+      "folder": "08-kavita-priya-skip",
+      "type": "skip-level",
+      "manager": { "name": "Kavita Reddy", "role": "VP Engineering", "gender": "F" },
+      "report": { "name": "Priya Sharma", "role": "Sr SWE Backend", "gender": "F" },
+      "skip_over": "Vikram Desai",
+      "manager_patterns": [],
+      "dynamic": "Gold standard meeting. Kavita asks great open questions, Priya opens up about not speaking up and Vikram presenting her work. Kavita coaches without undermining Vikram.",
+      "arc": "Jan: Light check-in, Priya is guarded. Feb: Priya mentions wanting to present her own webhook design, hints at Vikram taking over. Mar: Priya is more candid — Kavita coaches her on self-advocacy without throwing Vikram under the bus. Apr: Priya presented in sprint review — Kavita celebrates the growth."
+    },
+    {
+      "id": 9,
+      "folder": "09-vikram-amit",
+      "type": "direct",
+      "manager": { "name": "Vikram Desai", "role": "EM Backend", "gender": "M" },
+      "report": { "name": "Amit Joshi", "role": "SWE Backend", "gender": "M" },
+      "manager_patterns": ["JUMPING_TO_SOLUTIONS", "MANAGER_DOMINATING"],
+      "report_patterns": ["ACCOUNTABILITY_DEFLECTION"],
+      "dynamic": "EM addressing chronic estimation problems. Vikram tells Amit how to estimate instead of coaching him. Amit deflects with external factors. Classic bad 1:1.",
+      "arc": "Jan: OKR setting, Vikram assigns rate-limiting, Amit says '2 weeks'. Feb: Estimate blown, Vikram frustrated, jumps to 'just use Redis'. Mar: Q1 review — Vikram gives vague 'you need to estimate better' without SBI specifics. Apr: Vikram tries new approach (task decomposition framework) — slight improvement."
+    },
+    {
+      "id": 10,
+      "folder": "10-vikram-ravi",
+      "type": "direct",
+      "manager": { "name": "Vikram Desai", "role": "EM Backend", "gender": "M" },
+      "report": { "name": "Ravi Kumar", "role": "SWE Backend", "gender": "M" },
+      "manager_patterns": ["JUMPING_TO_SOLUTIONS", "MANAGER_DOMINATING", "CLOSED_QUESTIONS_ONLY"],
+      "report_patterns": ["EMPLOYEE_DISENGAGED"],
+      "dynamic": "Worst combination. Vikram dominates, Ravi goes silent. Vikram asks 'are you blocked?' (closed), Ravi says 'no' (lying). The 2-week silence incident happens between Feb and Mar meetings.",
+      "arc": "Jan: Ravi quiet but seems okay. Vikram does all the talking. Feb: Ravi barely speaks, Vikram doesn't notice — asks only yes/no questions. Mar: Post-silence blowup — Vikram is frustrated but gives lecture instead of understanding root cause. Apr: New escalation rule, Ravi posts first blocker in Slack — cautious optimism."
+    },
+    {
+      "id": 11,
+      "folder": "11-deepa-ananya",
+      "type": "direct",
+      "manager": { "name": "Deepa Nair", "role": "EM Frontend & Design", "gender": "F" },
+      "report": { "name": "Ananya Krishnan", "role": "Sr Product Designer", "gender": "F" },
+      "manager_patterns": ["NO_ACTION_ITEMS"],
+      "dynamic": "Good relationship, creative discussions. Deepa gives thoughtful feedback but meetings end without firm commitments on timeline. Ananya's edge-case gap is the recurring topic.",
+      "arc": "Jan: Design kickoff, great creative energy but no hard deadlines set. Feb: Designs are beautiful, devs start flagging undefined states. Mar: 14 edge cases found — Deepa praises the design but needs to push on spec completeness. Apr: Ananya creates spec checklist, first spec passes with zero gaps."
+    },
+    {
+      "id": 12,
+      "folder": "12-sanjay-meera",
+      "type": "direct",
+      "manager": { "name": "Sanjay Iyer", "role": "VP Sales", "gender": "M" },
+      "report": { "name": "Meera Rao", "role": "Sales Manager", "gender": "F" },
+      "manager_patterns": ["MISSED_GOAL_REFERENCE", "NO_FOLLOW_UP", "NO_ACTION_ITEMS"],
+      "dynamic": "VP Sales is charismatic but unstructured. Meetings with Meera devolve into strategy brainstorming — never ties back to OKRs. Meera is more structured and subtly tries to steer the conversation back.",
+      "arc": "Jan: Setting targets, Sanjay gets excited about market opportunity and goes off-topic. Feb: Pipeline gap discussion, Sanjay never checks on January commitments. Mar: Q1 miss — Sanjay wants to talk strategy, Meera pushes for specifics. Apr: Meera brings her own agenda, meeting is more structured."
+    },
+    {
+      "id": 13,
+      "folder": "13-meera-farah",
+      "type": "direct",
+      "manager": { "name": "Meera Rao", "role": "Sales Manager", "gender": "F" },
+      "report": { "name": "Farah Sheikh", "role": "Account Executive", "gender": "F" },
+      "manager_patterns": ["CLOSED_QUESTIONS_ONLY"],
+      "dynamic": "Manager coaching top performer to document her process. Farah pushes back on bureaucracy. Meera reverts to checklist questions when challenged. Interesting tension between process and autonomy.",
+      "arc": "Jan: Numbers check-in, Farah is crushing it. Meera raises documentation — Farah dismisses it. Feb: Meridian deal closes, Meera asks Farah to write it up. Farah says 'I just talk to people'. Mar: Team can't replicate Farah's success — Meera gets more insistent. Apr: Compromise — Farah agrees to record one deal walkthrough instead of writing."
+    },
+    {
+      "id": 14,
+      "folder": "14-meera-dev",
+      "type": "direct",
+      "manager": { "name": "Meera Rao", "role": "Sales Manager", "gender": "F" },
+      "report": { "name": "Dev Chatterjee", "role": "SDR", "gender": "M" },
+      "manager_patterns": ["CLOSED_QUESTIONS_ONLY", "ALL_CRITICISM_NO_RECOGNITION"],
+      "dynamic": "Manager increasingly frustrated with SDR's generic outreach. Meera starts balanced but by March it's all criticism. Dev is trying but not improving fast enough. PIP trajectory.",
+      "arc": "Jan: Coaching on personalization, Meera is patient. Feb: Numbers still bad, Meera starts asking more closed questions ('did you personalize?'). Mar: Frustration boils over — all criticism, no recognition of his volume effort. Apr: Meera resets, acknowledges effort, but signals formal performance plan if May doesn't improve."
+    },
+    {
+      "id": 15,
+      "folder": "15-sanjay-farah-skip",
+      "type": "skip-level",
+      "manager": { "name": "Sanjay Iyer", "role": "VP Sales", "gender": "M" },
+      "report": { "name": "Farah Sheikh", "role": "Account Executive", "gender": "F" },
+      "skip_over": "Meera Rao",
+      "manager_patterns": ["NO_FOLLOW_UP"],
+      "dynamic": "VP skip-level with top AE. Farah is candid with Sanjay about why she doesn't document — 'my process is intuitive, writing it down kills it.' Sanjay relates because he's the same way. Interesting mirror.",
+      "arc": "Jan: Rapport building, Sanjay and Farah click (both are closers). Feb: Sanjay asks about Meera's management — Farah is diplomatic but hints at over-process. Mar: Sanjay realizes Farah's 'black box' is a company risk, not just Meera's concern. Apr: Sanjay suggests Farah mentor Anil directly instead of documenting — creative solution."
+    }
+  ],
+  "meetings": ["jan-2026", "feb-2026", "mar-2026", "apr-2026"],
+  "trigger_definitions": {
+    "VAGUE_FEEDBACK": "Manager gives evaluative statements without naming specific situation, behavior, or impact",
+    "MANAGER_DOMINATING": "Manager speaks 70%+ of the conversation, doesn't create space for the employee",
+    "NO_ACTION_ITEMS": "Meeting segment or full meeting ends without clear commitments (who/what/when)",
+    "CLOSED_QUESTIONS_ONLY": "Manager asks only yes/no or leading questions, no open exploratory questions",
+    "JUMPING_TO_SOLUTIONS": "Employee describes problem, manager immediately gives the answer without exploring",
+    "NO_FOLLOW_UP": "No reference to previous meeting commitments or action items",
+    "MISSED_GOAL_REFERENCE": "Relevant OKR exists but neither person brings it up when it's clearly relevant",
+    "ALL_CRITICISM_NO_RECOGNITION": "All manager feedback in the segment is negative with zero acknowledgment of positives"
+  },
+  "frameworks": {
+    "manager": {
+      "SBI": "Situation-Behavior-Impact — used when VAGUE_FEEDBACK fires",
+      "COACHING_HABIT": "Michael Bungay Stanier's 7 questions — used when JUMPING_TO_SOLUTIONS or CLOSED_QUESTIONS_ONLY fires",
+      "RADICAL_CANDOR": "Care Personally + Challenge Directly — used when ALL_CRITICISM_NO_RECOGNITION fires or emotional dismissal detected"
+    },
+    "employee": {
+      "GROW": "Goal-Reality-Options-Way Forward — used when employee isn't self-advocating",
+      "DESC": "Describe-Express-Specify-Consequences — used when employee is passive or disengaged"
+    }
+  }
+}
